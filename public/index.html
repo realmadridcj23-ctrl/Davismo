@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>davismo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void: #06120a;
+    --bg-panel: #0d2015;
+    --bg-panel-2: #12301c;
+    --line: #1f4029;
+    --green-signal: #52ff86;
+    --green-deep: #1f6b3a;
+    --green-soft: #2e7d46;
+    --text-primary: #eaf6ec;
+    --text-muted: #93b89c;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: inherit; }
+
+  /* ---------- STAGE (single fixed screen) ---------- */
+  .stage{
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #bg-canvas{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  header{
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 20;
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo{
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .logo span{ color: var(--green-signal); }
+  .nav-links{
+    display: flex;
+    gap: 10px;
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .nav-links button{
+    font-family: 'Inter', sans-serif;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .nav-links button:hover, .nav-links button:focus-visible{
+    color: var(--green-signal);
+    border-color: var(--green-deep);
+  }
+
+  .hero-content{
+    position: relative;
+    z-index: 10;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .hero-content h1{
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 700;
+    font-size: clamp(56px, 12vw, 120px);
+    line-height: 0.95;
+    margin: 0 0 20px 0;
+  }
+  .hero-content p{
+    max-width: 480px;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin: 0 0 34px 0;
+  }
+  .hero-actions{ display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+  .btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 26px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14.5px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn-solid{
+    background: var(--green-signal);
+    color: #06280f;
+  }
+  .btn-solid:hover{ background: #6bffa0; }
+  .btn-outline{
+    background: transparent;
+    border-color: var(--line);
+    color: var(--text-primary);
+  }
+  .btn-outline:hover{ border-color: var(--green-signal); color: var(--green-signal); }
+
+  /* ---------- OVERLAY ---------- */
+  .overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(6, 18, 10, 0.82);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+  }
+  .overlay.open{
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .overlay-panel{
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 82vh;
+    overflow-y: auto;
+    padding: 40px;
+    position: relative;
+    transform: translateY(10px);
+    transition: transform .18s ease;
+  }
+  .overlay.open .overlay-panel{ transform: translateY(0); }
+
+  .overlay-close{
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .overlay-close:hover{ color: var(--green-signal); border-color: var(--green-deep); }
+
+  .overlay-head h2{
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+  }
+  .overlay-head p{
+    color: var(--text-muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin: 0 0 30px 0;
+  }
+
+  /* ---------- JUEGOS OVERLAY ---------- */
+  .games-grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .game-card{
+    background: var(--bg-void);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color .18s ease;
+  }
+  .game-card:hover{ border-color: var(--green-deep); }
+  .game-tag{
+    font-size: 12px;
+    color: var(--green-signal);
+    font-weight: 600;
+    font-family: 'Chakra Petch', sans-serif;
+  }
+  .game-card h3{
+    margin: 0;
+    font-size: 19px;
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 600;
+  }
+  .game-card p{
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    line-height: 1.5;
+    flex-grow: 1;
+  }
+  .game-card .btn{ align-self: flex-start; padding: 8px 16px; font-size: 13px; }
+
+  /* ---------- DISCORD OVERLAY ---------- */
+  .discord-join{
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--green-signal);
+    color: #06280f;
+    font-weight: 700;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 16px;
+    padding: 16px 30px;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .discord-join:hover{ background: #6bffa0; transform: translateY(-1px); }
+  .discord-join svg{ width: 22px; height: 22px; }
+
+  /* ---------- REGISTRO OVERLAY ---------- */
+  form{
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  label{
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 7px;
+  }
+  input[type="text"], input[type="email"]{
+    width: 100%;
+    background: var(--bg-void);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    color: var(--text-primary);
+    font-size: 14.5px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  input:focus-visible{ border-color: var(--green-signal); }
+  .field-error{
+    color: #ff8a7a;
+    font-size: 12.5px;
+    margin-top: 6px;
+    min-height: 16px;
+  }
+  #registro-msg{
+    font-size: 14px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    display: none;
+  }
+  #registro-msg.show{ display: block; }
+  #registro-msg.ok{ background: rgba(82,255,134,0.1); color: var(--green-signal); border: 1px solid var(--green-deep); }
+  #registro-msg.err{ background: rgba(255,138,122,0.1); color: #ff8a7a; border: 1px solid #7a3a32; }
+
+  .members-panel{
+    border-top: 1px solid var(--line);
+    margin-top: 26px;
+    padding-top: 22px;
+  }
+  .members-panel h3{
+    font-family: 'Chakra Petch', sans-serif;
+    margin: 0 0 4px 0;
+    font-size: 15.5px;
+  }
+  .members-panel .sub{
+    color: var(--text-muted);
+    font-size: 12px;
+    margin: 0 0 14px 0;
+  }
+  #members-list{
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  #members-list li{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: var(--bg-void);
+  }
+  .dot{
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-signal);
+    flex-shrink: 0;
+  }
+  #members-empty{ color: var(--text-muted); font-size: 13px; }
+
+  /* ---------- ASISTENTE (IA de davismo) ---------- */
+  .assistant-head{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+  .assistant-avatar{
+    width:40px; height:40px; border-radius:50%; background: rgba(82,255,134,0.12);
+    border:1px solid var(--green-deep); display:flex; align-items:center; justify-content:center;
+    font-family:'Chakra Petch',sans-serif; font-weight:700; color: var(--green-signal); flex-shrink:0;
+  }
+  .assistant-status{ font-size:12px; color: var(--text-muted); }
+  .assistant-status .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--green-signal); margin-right:6px; }
+
+  .assistant-cat-row{ margin-bottom:16px; }
+  .assistant-cat-row label{ font-size:13px; color: var(--text-muted); font-weight:500; display:block; margin-bottom:7px; }
+  .assistant-cat-row select{
+    width:100%; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:11px 12px;
+    color: var(--text-primary); font-size:14px; font-family:'Inter',sans-serif; outline:none;
+  }
+  .assistant-cat-row select:focus-visible{ border-color: var(--green-signal); }
+
+  .assistant-chat{
+    display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto;
+    padding:14px; margin-bottom:16px; background: var(--bg-void); border:1px solid var(--line); border-radius:10px;
+  }
+  .chat-bubble{ max-width: 82%; padding:10px 14px; border-radius:10px; font-size:14px; line-height:1.5; }
+  .chat-bubble.bot{ align-self:flex-start; background: var(--bg-panel-2); border:1px solid var(--line); color: var(--text-primary); }
+  .chat-bubble.user{ align-self:flex-end; background: var(--green-signal); color:#06280f; font-weight:500; }
+  .chat-bubble.bot.ok{ border-color: var(--green-deep); }
+  .chat-bubble.bot.bad{ border-color: #7a3a32; }
+  .chat-bubble .match-list{ margin: 6px 0 0 0; padding-left: 18px; }
+  .chat-bubble .match-list li{ margin-bottom: 2px; }
+
+  .assistant-input-row{ display:flex; gap:10px; }
+  .assistant-input-row input{
+    flex:1; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:12px 14px;
+    color: var(--text-primary); font-size:14.5px; font-family:'Inter',sans-serif; outline:none; transition:border-color .15s ease;
+  }
+  .assistant-input-row input:focus-visible{ border-color: var(--green-signal); }
+
+  /* ---------- MENTIROSO FUTBOLERO ---------- */
+  .overlay-panel.wide{ max-width: 760px; }
+
+  .mgame-back{ background:transparent; border:none; color: var(--text-muted); font-size:13px; cursor:pointer; margin-bottom:16px; padding:0; display:flex; align-items:center; gap:6px; }
+  .mgame-back:hover{ color: var(--green-signal); }
+
+  .mgame-setup .cat-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px; margin-bottom:22px; }
+  .mgame-setup .cat-card{ background: var(--bg-void); border:1px solid var(--line); border-radius:8px; padding:16px; cursor:pointer; transition: border-color .15s ease, background .15s ease; }
+  .mgame-setup .cat-card:hover{ border-color: var(--green-deep); }
+  .mgame-setup .cat-card.selected{ border-color: var(--green-signal); background: rgba(82,255,134,0.07); }
+  .mgame-setup .cat-card h4{ margin:0 0 6px 0; font-family:'Chakra Petch',sans-serif; font-size:15px; }
+  .mgame-setup .cat-card p{ margin:0; color: var(--text-muted); font-size:12.5px; line-height:1.4; }
+  .mgame-setup .cat-card .count{ display:inline-block; margin-top:8px; font-size:11px; color: var(--green-signal); font-family:'Chakra Petch',sans-serif; }
+
+  .mgame-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+  .mgame-field{ flex:1; min-width:150px; }
+  .mgame-field label{ font-size:13px; color: var(--text-muted); font-weight:500; display:block; margin-bottom:7px; }
+  .mgame-field input[type="text"], .mgame-field input[type="number"]{
+    width:100%; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:11px 12px; color: var(--text-primary); font-size:14px; font-family:'Inter',sans-serif; outline:none; transition:border-color .15s ease;
+  }
+  .mgame-field input:focus-visible{ border-color: var(--green-signal); }
+
+  .mgame-presets{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .mgame-presets button{ background:transparent; border:1px solid var(--line); color:var(--text-muted); padding:6px 12px; border-radius:5px; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; }
+  .mgame-presets button.active, .mgame-presets button:hover{ border-color: var(--green-signal); color: var(--green-signal); }
+
+  .mgame-error{ color:#ff8a7a; font-size:12.5px; margin: -10px 0 16px 0; min-height:16px; }
+
+  .mgame-turn-banner{ text-align:center; margin-bottom:18px; }
+  .mgame-turn-banner .whoturn{ font-family:'Chakra Petch',sans-serif; font-size:22px; font-weight:700; color: var(--green-signal); margin-bottom:4px; }
+  .mgame-turn-banner .sub{ color: var(--text-muted); font-size:13.5px; }
+
+  .mgame-bid-display{ text-align:center; background: var(--bg-void); border:1px solid var(--line); border-radius:10px; padding:26px; margin-bottom:20px; }
+  .mgame-bid-display .num{ font-family:'Chakra Petch',sans-serif; font-size:56px; font-weight:700; color: var(--green-signal); line-height:1; }
+  .mgame-bid-display .lbl{ color: var(--text-muted); font-size:13px; margin-top:6px; }
+
+  .mgame-actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:center; }
+  .mgame-actions .btn{ padding: 13px 22px; }
+  .mgame-actions input[type="number"]{
+    width:90px; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:12px 10px; color: var(--text-primary); font-size:15px; text-align:center; outline:none;
+  }
+  .mgame-actions input[type="number"]:focus-visible{ border-color: var(--green-signal); }
+  .btn-danger{ background:#ff5c5c; color:#2a0505; }
+  .btn-danger:hover{ background:#ff8484; }
+
+  .mgame-challenge-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+  .mgame-progress{ font-family:'Chakra Petch',sans-serif; font-size:18px; }
+  .mgame-progress span{ color: var(--green-signal); }
+  .mgame-timer{ font-family:'Chakra Petch',sans-serif; font-size:26px; font-weight:700; }
+  .mgame-timer.low{ color:#ff5c5c; }
+
+  .mgame-answer-input{ display:flex; gap:10px; margin-bottom:16px; }
+  .mgame-answer-input input{ flex:1; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:12px 14px; color: var(--text-primary); font-size:15px; outline:none; }
+  .mgame-answer-input input:focus-visible{ border-color: var(--green-signal); }
+
+  .mgame-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; min-height: 34px; }
+  .mgame-chip{ background: rgba(82,255,134,0.1); border:1px solid var(--green-deep); color: var(--green-signal); padding:6px 12px; border-radius:20px; font-size:12.5px; }
+
+  .mgame-feedback{ text-align:center; font-size:14px; padding:10px; border-radius:6px; margin-bottom:14px; min-height:20px; }
+  .mgame-feedback.err{ background: rgba(255,138,122,0.1); color:#ff8a7a; border:1px solid #7a3a32; }
+  .mgame-feedback.ok{ background: rgba(82,255,134,0.1); color: var(--green-signal); border:1px solid var(--green-deep); }
+
+  .mgame-result{ text-align:center; }
+  .mgame-result .winner{ font-family:'Chakra Petch',sans-serif; font-size:30px; font-weight:700; color: var(--green-signal); margin-bottom:10px; }
+  .mgame-result .desc{ color: var(--text-muted); font-size:14px; margin-bottom:22px; line-height:1.6; }
+  .mgame-result .missing{ color: #ff8a7a; }
+  .mgame-score{ display:flex; justify-content:center; gap:28px; margin-bottom:26px; }
+  .mgame-score div{ text-align:center; }
+  .mgame-score .n{ font-family:'Chakra Petch',sans-serif; font-size:26px; font-weight:700; }
+  .mgame-score .l{ color: var(--text-muted); font-size:12px; }
+
+  /* ---------- TOAST ---------- */
+  .toast{
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 200;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--green-deep);
+    color: var(--text-primary);
+    padding: 13px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ---------- MENTIROSO ONLINE ---------- */
+  .mgame-mode-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:14px; margin-bottom: 6px; }
+  .mgame-mode-card{ background: var(--bg-void); border:1px solid var(--line); border-radius:10px; padding:22px; cursor:pointer; transition: border-color .15s ease, background .15s ease; text-align:left; }
+  .mgame-mode-card:hover{ border-color: var(--green-deep); }
+  .mgame-mode-card h4{ margin:0 0 8px 0; font-family:'Chakra Petch',sans-serif; font-size:17px; }
+  .mgame-mode-card p{ margin:0; color: var(--text-muted); font-size:13px; line-height:1.5; }
+
+  .mgame-online-panel{ max-width: 420px; margin: 0 auto; }
+  .mgame-online-panel .mgame-field{ margin-bottom:16px; }
+  .mgame-online-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .mgame-online-tabs button{ flex:1; background: var(--bg-void); border:1px solid var(--line); color: var(--text-muted); padding:10px; border-radius:6px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; }
+  .mgame-online-tabs button.active{ border-color: var(--green-signal); color: var(--green-signal); }
+
+  .mgame-room-code{ text-align:center; background: var(--bg-void); border:1px solid var(--line); border-radius:10px; padding:26px; margin-bottom:18px; }
+  .mgame-room-code .code{ font-family:'Chakra Petch',sans-serif; font-size:44px; font-weight:700; letter-spacing: 6px; color: var(--green-signal); }
+  .mgame-room-code .lbl{ color: var(--text-muted); font-size:13px; margin-top:8px; }
+  .mgame-waiting{ text-align:center; color: var(--text-muted); font-size:13.5px; margin-top:6px; }
+  .mgame-players-online{ display:flex; justify-content:center; gap:10px; font-size:13px; color: var(--text-muted); margin-bottom:18px; flex-wrap:wrap; }
+  .mgame-players-online span{ background: var(--bg-void); border:1px solid var(--line); padding:6px 12px; border-radius:20px; }
+  .mgame-players-online span.me{ border-color: var(--green-deep); color: var(--green-signal); }
+  .mgame-players-online span.off{ color: #ff8a7a; border-color: #7a3a32; }
+
+  @media (max-width: 640px){
+    .games-grid{ grid-template-columns: 1fr; }
+    .overlay-panel{ padding: 28px; }
+    .nav-links button{ padding: 8px 12px; font-size: 12.5px; }
+    .mgame-setup .cat-grid{ grid-template-columns: 1fr; }
+    .mgame-bid-display .num{ font-size: 42px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <canvas id="bg-canvas"></canvas>
+
+  <header>
+    <a href="#" class="logo">davis<span>mo</span></a>
+    <ul class="nav-links">
+      <li><button type="button" data-open="juegos">Juegos</button></li>
+      <li><button type="button" data-open="asistente">Asistente</button></li>
+      <li><button type="button" data-open="discord">Discord</button></li>
+      <li><button type="button" data-open="registro">Registro</button></li>
+    </ul>
+  </header>
+
+  <div class="hero-content">
+    <h1>davismo</h1>
+    <p>Un espacio para jugar, seguir novedades y estar conectado con la comunidad. Explora los juegos y únete al servidor de Discord.</p>
+    <div class="hero-actions">
+      <button type="button" class="btn btn-solid" data-open="juegos">Ver juegos</button>
+      <button type="button" class="btn btn-outline" data-open="registro">Registrarme</button>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- JUEGOS OVERLAY ---------- -->
+<div class="overlay" id="overlay-juegos" aria-hidden="true">
+  <div class="overlay-panel">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Juegos</h2>
+      <p>Estos son los juegos disponibles ahora mismo en davismo.</p>
+    </div>
+    <div class="games-grid">
+      <div class="game-card">
+        <span class="game-tag">Comunidad</span>
+        <h3>Álbum Davista</h3>
+        <p>Colecciona y completa el álbum de figuras de la comunidad davismo.</p>
+        <button type="button" class="btn btn-outline" data-soon>Jugar</button>
+      </div>
+      <div class="game-card">
+        <span class="game-tag">Deducción</span>
+        <h3>Impostor</h3>
+        <p>Juega y disfruta con el davismo, el tipico impostor de 412.</p>
+        <button type="button" class="btn btn-outline" data-soon>Jugar</button>
+      </div>
+      <div class="game-card">
+        <span class="game-tag">Preguntas</span>
+        <h3>Trivia</h3>
+        <p>Pon a prueba tus conocimientos.</p>
+        <button type="button" class="btn btn-outline" data-soon>Jugar</button>
+      </div>
+      <div class="game-card">
+        <span class="game-tag">Fiesta · Online</span>
+        <h3>Mentiroso</h3>
+        <p>Juega con el davismo el tipico mentiroso del puerro y el nine. Local o con un rival online.</p>
+        <button type="button" class="btn btn-outline" data-open="mentiroso">Jugar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- TOAST ---------- -->
+<div class="toast" id="toast" aria-live="polite"></div>
+
+<!-- ---------- DISCORD OVERLAY ---------- -->
+<div class="overlay" id="overlay-discord" aria-hidden="true">
+  <div class="overlay-panel">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Únete a la comunidad</h2>
+      <p>Habla con otros jugadores, entérate de novedades y participa en eventos dentro del servidor de Discord de davismo.</p>
+    </div>
+    <a class="discord-join" href="https://discord.gg/vDMAYbqsMu" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.128 12.3 12.3 0 0 1-1.873.891.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.077.077 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.662a.06.06 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.947 2.418-2.157 2.418z"/></svg>
+      Entrar al Discord
+    </a>
+  </div>
+</div>
+
+<!-- ---------- REGISTRO OVERLAY ---------- -->
+<div class="overlay" id="overlay-registro" aria-hidden="true">
+  <div class="overlay-panel">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Registro</h2>
+      <p>Crea tu cuenta con tu correo y nombre de usuario para aparecer en la comunidad davismo.</p>
+    </div>
+    <form id="registro-form" novalidate>
+      <div>
+        <label for="username">Nombre de usuario</label>
+        <input type="text" id="username" name="username" placeholder="ej. davis_23" autocomplete="username">
+        <div class="field-error" id="username-error"></div>
+      </div>
+      <div>
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" autocomplete="email">
+        <div class="field-error" id="email-error"></div>
+      </div>
+      <button type="submit" class="btn btn-solid">Crear cuenta</button>
+      <div id="registro-msg"></div>
+    </form>
+
+    <div class="members-panel">
+      <h3>Miembros registrados</h3>
+      <p class="sub">Solo se muestra el nombre de usuario, nunca el correo.</p>
+      <ul id="members-list"></ul>
+      <p id="members-empty">Todavía no hay nadie registrado. ¡Sé el primero!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- ASISTENTE (IA de davismo) OVERLAY ---------- -->
+<div class="overlay" id="overlay-asistente" aria-hidden="true">
+  <div class="overlay-panel wide">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="assistant-head">
+      <div class="assistant-avatar">IA</div>
+      <div>
+        <div class="overlay-head" style="margin-bottom:0;">
+          <h2 style="margin-bottom:2px;">Asistente davismo</h2>
+        </div>
+        <div class="assistant-status"><span class="dot"></span>Listo para revisar tus respuestas del Mentiroso</div>
+      </div>
+    </div>
+
+    <div class="assistant-cat-row">
+      <label for="assistant-category">Categoría a revisar</label>
+      <select id="assistant-category">
+        <option value="">Todas las categorías</option>
+      </select>
+    </div>
+
+    <div class="assistant-chat" id="assistant-chat"></div>
+
+    <form id="assistant-form" class="assistant-input-row" novalidate>
+      <input type="text" id="assistant-input" placeholder="Escribí un nombre, ej: Rodri..." autocomplete="off">
+      <button type="submit" class="btn btn-solid">Enviar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ---------- MENTIROSO FUTBOLERO OVERLAY ---------- -->
+<div class="overlay" id="overlay-mentiroso" aria-hidden="true">
+  <div class="overlay-panel wide">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Mentiroso Futbolero</h2>
+      <p>El clásico: subí la apuesta o cantá "¡Mentiroso!" — si te cantan, tenés que nombrarlos todos antes de que se acabe el tiempo.</p>
+    </div>
+    <div id="mentiroso-root"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ---------------- Interactive green background ----------------
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let width, height, particles = [];
+  const mouse = { x: null, y: null, radius: 140 };
+
+  function resize(){
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+
+  function initParticles(){
+    const count = Math.min(100, Math.floor((width * height) / 14000));
+    particles = [];
+    for(let i = 0; i < count; i++){
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 1.6 + 1
+      });
+    }
+  }
+
+  function step(){
+    ctx.clearRect(0, 0, width, height);
+
+    if(mouse.x !== null){
+      const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 260);
+      grad.addColorStop(0, 'rgba(82,255,134,0.10)');
+      grad.addColorStop(1, 'rgba(82,255,134,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    for(let i = 0; i < particles.length; i++){
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if(p.x < 0 || p.x > width) p.vx *= -1;
+      if(p.y < 0 || p.y > height) p.vy *= -1;
+
+      if(mouse.x !== null){
+        const dx = p.x - mouse.x, dy = p.y - mouse.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < mouse.radius){
+          const force = (mouse.radius - dist) / mouse.radius;
+          p.x += (dx / dist) * force * 1.6;
+          p.y += (dy / dist) * force * 1.6;
+        }
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(234,246,236,0.85)';
+      ctx.fill();
+    }
+
+    for(let i = 0; i < particles.length; i++){
+      for(let j = i + 1; j < particles.length; j++){
+        const a = particles[i], b = particles[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < 130){
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = 'rgba(82,255,134,' + (1 - dist/130) * 0.35 + ')';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+  document.querySelector('.stage').addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  document.querySelector('.stage').addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+
+  resize();
+  initParticles();
+  step();
+})();
+
+// ---------------- Overlay open/close ----------------
+(function(){
+  const overlays = {
+    juegos: document.getElementById('overlay-juegos'),
+    discord: document.getElementById('overlay-discord'),
+    registro: document.getElementById('overlay-registro'),
+    mentiroso: document.getElementById('overlay-mentiroso'),
+    asistente: document.getElementById('overlay-asistente')
+  };
+
+  function openOverlay(name){
+    const el = overlays[name];
+    if(!el) return;
+    el.classList.add('open');
+    el.setAttribute('aria-hidden', 'false');
+    if(name === 'mentiroso' && window.MentirosoGame){ window.MentirosoGame.render(); }
+    if(name === 'asistente' && window.DavismoAsistente){ window.DavismoAsistente.onOpen(); }
+  }
+  function closeOverlay(el){
+    el.classList.remove('open');
+    el.setAttribute('aria-hidden', 'true');
+    if(el && el.id === 'overlay-mentiroso' && window.MentirosoGame){ window.MentirosoGame.pause(); }
+  }
+  function closeAll(){
+    Object.values(overlays).forEach(closeOverlay);
+  }
+
+  document.querySelectorAll('[data-open]').forEach(btn => {
+    btn.addEventListener('click', () => openOverlay(btn.getAttribute('data-open')));
+  });
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeOverlay(btn.closest('.overlay')));
+  });
+  Object.values(overlays).forEach(el => {
+    el.addEventListener('click', (e) => { if(e.target === el) closeOverlay(el); });
+  });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeAll(); });
+})();
+
+// ---------------- Toast (juegos en desarrollo) ----------------
+(function(){
+  const toast = document.getElementById('toast');
+  let hideTimer = null;
+  window.showToast = function(text){
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  };
+  document.querySelectorAll('[data-soon]').forEach(btn => {
+    btn.addEventListener('click', () => window.showToast('En desarrollo, próximamente disponible.'));
+  });
+})();
+
+// ---------------- Registration (backend real, sin window.storage) ----------------
+(function(){
+  const form = document.getElementById('registro-form');
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  const usernameError = document.getElementById('username-error');
+  const emailError = document.getElementById('email-error');
+  const msg = document.getElementById('registro-msg');
+  const listEl = document.getElementById('members-list');
+  const emptyEl = document.getElementById('members-empty');
+  const submitBtn = form.querySelector('button[type="submit"]');
+
+  function showMsg(text, type){
+    msg.textContent = text;
+    msg.className = 'show ' + type;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function loadMembers(){
+    try{
+      const res = await fetch('/api/miembros');
+      if(!res.ok) throw new Error('bad status');
+      const data = await res.json();
+      const items = data.members || [];
+      if(items.length === 0){
+        emptyEl.style.display = 'block';
+        emptyEl.textContent = 'Todavía no hay nadie registrado. ¡Sé el primero!';
+        listEl.innerHTML = '';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = items.map(u =>
+        '<li><span class="dot"></span>' + escapeHtml(u) + '</li>'
+      ).join('');
+    }catch(e){
+      emptyEl.style.display = 'block';
+      emptyEl.textContent = 'No se pudo cargar la lista de miembros. Revisá que el servidor esté corriendo.';
+    }
+  }
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    usernameError.textContent = '';
+    emailError.textContent = '';
+    msg.className = '';
+
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim();
+    let hasError = false;
+
+    if(username.length < 3){
+      usernameError.textContent = 'El usuario debe tener al menos 3 caracteres.';
+      hasError = true;
+    }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      emailError.textContent = 'Ingresa un correo válido.';
+      hasError = true;
+    }
+    if(hasError) return;
+
+    submitBtn.disabled = true;
+    try{
+      const res = await fetch('/api/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email })
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if(!res.ok || !data.ok){
+        const errText = data.error || 'No se pudo completar el registro. Intentá de nuevo.';
+        if(data.field === 'username') usernameError.textContent = errText;
+        else if(data.field === 'email') emailError.textContent = errText;
+        else showMsg(errText, 'err');
+        return;
+      }
+
+      showMsg('¡Cuenta creada! Bienvenido a davismo, ' + data.username + '.', 'ok');
+      form.reset();
+      loadMembers();
+    }catch(e){
+      showMsg('No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', 'err');
+    }finally{
+      submitBtn.disabled = false;
+    }
+  });
+
+  loadMembers();
+})();
+</script>
+
+<script>
+// ---------------- Asistente (IA de davismo) ----------------
+(function(){
+  const chatEl = document.getElementById('assistant-chat');
+  const formEl = document.getElementById('assistant-form');
+  const inputEl = document.getElementById('assistant-input');
+  const categorySelect = document.getElementById('assistant-category');
+
+  let categoriesLoaded = false;
+  let greeted = false;
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function addBubble(text, who, tone){
+    const div = document.createElement('div');
+    div.className = 'chat-bubble ' + who + (tone ? (' ' + tone) : '');
+    div.innerHTML = text;
+    chatEl.appendChild(div);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  async function loadCategories(){
+    if(categoriesLoaded) return;
+    try{
+      const res = await fetch('/api/categorias');
+      const data = await res.json();
+      (data.categories || []).forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.key;
+        opt.textContent = cat.label;
+        categorySelect.appendChild(opt);
+      });
+      categoriesLoaded = true;
+    }catch(e){
+      // si falla, se puede seguir usando "Todas las categorías"
+    }
+  }
+
+  function greet(){
+    if(greeted) return;
+    greeted = true;
+    addBubble(
+      'Hola, soy la IA de davismo 🤖. Escribime un nombre (jugador, selección o club, según la categoría) y te digo si es una respuesta válida para el Mentiroso.',
+      'bot'
+    );
+  }
+
+  async function checkQuery(query){
+    const categoryKey = categorySelect.value;
+    addBubble(escapeHtml(query), 'user');
+
+    try{
+      const res = await fetch('/api/asistente/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, categoryKey })
+      });
+      const data = await res.json();
+
+      if(!res.ok || !data.ok){
+        addBubble(escapeHtml(data.error || 'No pude revisar eso, intentá de nuevo.'), 'bot', 'bad');
+        return;
+      }
+
+      if(data.valid){
+        if(data.matches.length === 1){
+          const m = data.matches[0];
+          addBubble(
+            '✅ Sí, <b>' + escapeHtml(m.display) + '</b> es válido en <b>' + escapeHtml(m.categoryLabel) + '</b>.',
+            'bot', 'ok'
+          );
+        } else {
+          const items = data.matches.map(m =>
+            '<li><b>' + escapeHtml(m.display) + '</b> — ' + escapeHtml(m.categoryLabel) + '</li>'
+          ).join('');
+          addBubble(
+            '✅ Encontré coincidencias en varias categorías:<ul class="match-list">' + items + '</ul>',
+            'bot', 'ok'
+          );
+        }
+      } else {
+        const catNote = categoryKey ? ('en la categoría elegida') : ('en ninguna categoría');
+        addBubble(
+          '❌ No encontré "<b>' + escapeHtml(query) + '</b>" ' + catNote + '. Revisá la ortografía o probá con el apellido solo.',
+          'bot', 'bad'
+        );
+      }
+    }catch(e){
+      addBubble('No me pude conectar con el servidor. Revisá tu conexión e intentá de nuevo.', 'bot', 'bad');
+    }
+  }
+
+  formEl.addEventListener('submit', function(e){
+    e.preventDefault();
+    const query = inputEl.value.trim();
+    if(!query) return;
+    inputEl.value = '';
+    checkQuery(query);
+  });
+
+  window.DavismoAsistente = {
+    onOpen: function(){
+      loadCategories();
+      greet();
+      inputEl.focus();
+    }
+  };
+})();
+</script>
+
+<script>
+// ---------------- Mentiroso Futbolero ----------------
+(function(){
+
+  function mk(display, aliasesCsv){
+    const aliases = (aliasesCsv + ',' + display).split(',').map(a => a.trim()).filter(Boolean);
+    return { display: display, aliases: aliases };
+  }
+
+  const CATEGORIES = {
+    balon_de_oro: {
+      label: 'Balón de Oro',
+      short: 'balón de oro',
+      hint: 'Futbolistas que ganaron el Balón de Oro masculino (1956–2025).',
+      items: [
+        mk('Stanley Matthews','matthews'),
+        mk('Alfredo Di Stéfano','di stefano,alfredo di stefano'),
+        mk('Raymond Kopa','kopa'),
+        mk('Luis Suárez Miramontes','luis suarez,suarez miramontes'),
+        mk('Omar Sívori','sivori'),
+        mk('Josef Masopust','masopust'),
+        mk('Lev Yashin','yashin'),
+        mk('Denis Law','law'),
+        mk('Eusébio','eusebio'),
+        mk('Bobby Charlton','charlton'),
+        mk('Flórián Albert','florian albert,albert'),
+        mk('George Best','best'),
+        mk('Gianni Rivera','rivera'),
+        mk('Gerd Müller','gerd muller,muller'),
+        mk('Johan Cruyff','cruyff'),
+        mk('Franz Beckenbauer','beckenbauer'),
+        mk('Oleg Blokhin','blokhin'),
+        mk('Allan Simonsen','simonsen'),
+        mk('Kevin Keegan','keegan'),
+        mk('Karl-Heinz Rummenigge','rummenigge,karl heinz rummenigge'),
+        mk('Paolo Rossi','rossi'),
+        mk('Michel Platini','platini'),
+        mk('Igor Belanov','belanov'),
+        mk('Ruud Gullit','gullit'),
+        mk('Marco van Basten','van basten'),
+        mk('Lothar Matthäus','lothar matthaus,matthaus'),
+        mk('Jean-Pierre Papin','papin,jean pierre papin'),
+        mk('Roberto Baggio','baggio'),
+        mk('Hristo Stoichkov','stoichkov'),
+        mk('George Weah','weah'),
+        mk('Matthias Sammer','sammer'),
+        mk('Ronaldo Nazário','ronaldo nazario,ronaldo fenomeno,el fenomeno,r9'),
+        mk('Zinédine Zidane','zinedine zidane,zidane'),
+        mk('Rivaldo',''),
+        mk('Luís Figo','luis figo,figo'),
+        mk('Michael Owen','owen'),
+        mk('Pavel Nedvěd','pavel nedved,nedved'),
+        mk('Andriy Shevchenko','shevchenko'),
+        mk('Ronaldinho','ronaldinho gaucho'),
+        mk('Fabio Cannavaro','cannavaro'),
+        mk('Kaká','kaka'),
+        mk('Cristiano Ronaldo','cristiano,cr7'),
+        mk('Lionel Messi','messi,leo messi'),
+        mk('Luka Modrić','luka modric,modric'),
+        mk('Karim Benzema','benzema'),
+        mk('Rodri','rodrigo hernandez,rodri hernandez'),
+        mk('Ousmane Dembélé','ousmane dembele,dembele')
+      ]
+    },
+    mundial: {
+      label: 'Campeones del Mundo',
+      short: 'campeones del Mundial',
+      hint: 'Selecciones que ganaron la Copa Mundial de la FIFA (1930–2026).',
+      items: [
+        mk('Uruguay',''),
+        mk('Italia',''),
+        mk('Alemania','alemania occidental,rfa'),
+        mk('Brasil',''),
+        mk('Inglaterra',''),
+        mk('Argentina',''),
+        mk('Francia',''),
+        mk('España','')
+      ]
+    },
+    champions: {
+      label: 'Campeones de la Champions',
+      short: 'campeones de la Champions League',
+      hint: 'Clubes que ganaron la Copa de Europa / Champions League (1956–2026).',
+      items: [
+        mk('Real Madrid',''),
+        mk('AC Milan','milan'),
+        mk('Liverpool',''),
+        mk('Bayern Múnich','bayern munich,bayern'),
+        mk('Ajax',''),
+        mk('Barcelona','fc barcelona,barca'),
+        mk('Manchester United','man united,man utd'),
+        mk('Inter de Milán','inter,internazionale,inter milan'),
+        mk('Nottingham Forest',''),
+        mk('Juventus',''),
+        mk('Benfica',''),
+        mk('Porto','fc porto,oporto'),
+        mk('Chelsea',''),
+        mk('Manchester City','man city'),
+        mk('Celtic',''),
+        mk('Feyenoord',''),
+        mk('PSV Eindhoven','psv'),
+        mk('Aston Villa',''),
+        mk('Hamburgo','hamburger sv,hsv'),
+        mk('Steaua Bucarest','steaua'),
+        mk('Estrella Roja de Belgrado','estrella roja,red star belgrade,crvena zvezda'),
+        mk('Olympique de Marsella','marsella,om'),
+        mk('Borussia Dortmund','dortmund,bvb'),
+        mk('Paris Saint-Germain','psg,paris sg')
+      ]
+    },
+    copa_america: {
+      label: 'Campeones de la Copa América',
+      short: 'campeones de la Copa América',
+      hint: 'Selecciones que ganaron la Copa América.',
+      items: [
+        mk('Uruguay',''),
+        mk('Argentina',''),
+        mk('Brasil',''),
+        mk('Paraguay',''),
+        mk('Perú','peru'),
+        mk('Bolivia',''),
+        mk('Chile',''),
+        mk('Colombia','')
+      ]
+    }
+  };
+
+  const TIME_PRESETS = [30, 45, 60, 90];
+
+  function normalize(str){
+    return (str || '')
+      .toString()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const state = {
+    mode: null, // null (elegir modo) | 'local' | 'online'
+    screen: 'setup', // setup | bid | challenge | result
+    players: ['Jugador 1', 'Jugador 2'],
+    timeLimit: 45,
+    categoryKey: null,
+    starter: 0,
+    turn: 0,
+    bid: 0,
+    bidder: null,
+    usedIdx: new Set(),
+    answersGiven: [],
+    timeLeft: 0,
+    timerId: null,
+    scores: [0, 0],
+    failReason: '',
+    roundsPlayed: 0
+  };
+
+  const root = () => document.getElementById('mentiroso-root');
+
+  function esc(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function pause(){
+    if(state.timerId){
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+  }
+
+  function render(){
+    const el = root();
+    if(!el) return;
+    if(state.mode === null) return renderModeSelect(el);
+    if(state.mode === 'online') return renderOnline(el);
+    if(state.screen === 'setup') return renderSetup(el);
+    if(state.screen === 'bid') return renderBid(el);
+    if(state.screen === 'challenge') return renderChallenge(el);
+    if(state.screen === 'result') return renderResult(el);
+  }
+
+  // -------- MODE SELECT --------
+  function renderModeSelect(el){
+    el.innerHTML = `
+      <div class="mgame-mode-grid">
+        <button type="button" class="mgame-mode-card" id="mg-mode-local">
+          <h4>🎮 Mismo dispositivo</h4>
+          <p>Los dos jugadores se turnan en esta pantalla, como el modo clásico.</p>
+        </button>
+        <button type="button" class="mgame-mode-card" id="mg-mode-online">
+          <h4>🌐 Online</h4>
+          <p>Jugá con alguien desde otro celular o PC, compartiendo un código de sala.</p>
+        </button>
+      </div>
+    `;
+    el.querySelector('#mg-mode-local').addEventListener('click', () => {
+      state.mode = 'local';
+      state.screen = 'setup';
+      render();
+    });
+    el.querySelector('#mg-mode-online').addEventListener('click', () => {
+      state.mode = 'online';
+      ensureSocket();
+      render();
+    });
+  }
+
+  // -------- SETUP SCREEN --------
+  function renderSetup(el){
+    const cats = Object.keys(CATEGORIES);
+    el.innerHTML = `
+      <div class="mgame-setup">
+        <button type="button" class="mgame-back" id="mg-back-mode-local">&larr; Elegir otro modo</button>
+        <div class="mgame-row">
+          <div class="mgame-field">
+            <label for="mg-p1">Nombre jugador 1</label>
+            <input type="text" id="mg-p1" maxlength="18" value="${esc(state.players[0])}" placeholder="Jugador 1">
+          </div>
+          <div class="mgame-field">
+            <label for="mg-p2">Nombre jugador 2</label>
+            <input type="text" id="mg-p2" maxlength="18" value="${esc(state.players[1])}" placeholder="Jugador 2">
+          </div>
+        </div>
+
+        <div class="mgame-field" style="margin-bottom:8px;">
+          <label for="mg-time">Tiempo para responder cuando te cantan mentiroso (segundos)</label>
+          <input type="number" id="mg-time" min="10" max="180" step="5" value="${state.timeLimit}">
+          <div class="mgame-presets" id="mg-presets">
+            ${TIME_PRESETS.map(t => `<button type="button" data-t="${t}" class="${t === state.timeLimit ? 'active' : ''}">${t}s</button>`).join('')}
+          </div>
+        </div>
+
+        <label style="font-size:13px;color:var(--text-muted);font-weight:500;display:block;margin:20px 0 10px 0;">Elegí una categoría</label>
+        <div class="cat-grid">
+          ${cats.map(k => {
+            const c = CATEGORIES[k];
+            const sel = state.categoryKey === k ? 'selected' : '';
+            return `<div class="cat-card ${sel}" data-cat="${k}">
+              <h4>${esc(c.label)}</h4>
+              <p>${esc(c.hint)}</p>
+              <span class="count">${c.items.length} respuestas posibles</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="mgame-error" id="mg-setup-error"></div>
+        <div class="mgame-actions">
+          <button type="button" class="btn btn-outline" id="mg-random-cat">Categoría aleatoria</button>
+          <button type="button" class="btn btn-solid" id="mg-start">Empezar partida</button>
+        </div>
+      </div>
+    `;
+
+    el.querySelector('#mg-back-mode-local').addEventListener('click', () => {
+      state.mode = null;
+      render();
+    });
+    el.querySelectorAll('.cat-card').forEach(card => {
+      card.addEventListener('click', () => {
+        state.categoryKey = card.getAttribute('data-cat');
+        render();
+      });
+    });
+    el.querySelector('#mg-random-cat').addEventListener('click', () => {
+      const cats = Object.keys(CATEGORIES);
+      state.categoryKey = cats[Math.floor(Math.random() * cats.length)];
+      render();
+    });
+    el.querySelectorAll('#mg-presets button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.timeLimit = parseInt(btn.getAttribute('data-t'), 10);
+        el.querySelector('#mg-time').value = state.timeLimit;
+        el.querySelectorAll('#mg-presets button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+    el.querySelector('#mg-p1').addEventListener('input', e => { state.players[0] = e.target.value; });
+    el.querySelector('#mg-p2').addEventListener('input', e => { state.players[1] = e.target.value; });
+    el.querySelector('#mg-time').addEventListener('input', e => {
+      let v = parseInt(e.target.value, 10);
+      if(isNaN(v)) v = 45;
+      v = Math.max(10, Math.min(180, v));
+      state.timeLimit = v;
+      el.querySelectorAll('#mg-presets button').forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-t'),10) === v));
+    });
+
+    el.querySelector('#mg-start').addEventListener('click', () => {
+      const errEl = el.querySelector('#mg-setup-error');
+      const p1 = state.players[0].trim() || 'Jugador 1';
+      const p2 = state.players[1].trim() || 'Jugador 2';
+      state.players = [p1, p2];
+      if(!state.categoryKey){
+        errEl.textContent = 'Elegí una categoría para empezar.';
+        return;
+      }
+      errEl.textContent = '';
+      state.scores = [0, 0];
+      state.starter = 0;
+      startRound();
+    });
+  }
+
+  // -------- ROUND START / BID SCREEN --------
+  function startRound(){
+    state.turn = state.starter;
+    state.bid = 0;
+    state.bidder = null;
+    state.usedIdx = new Set();
+    state.answersGiven = [];
+    state.failReason = '';
+    state.screen = 'bid';
+    render();
+  }
+
+  function poolSize(){
+    return CATEGORIES[state.categoryKey].items.length;
+  }
+
+  function renderBid(el){
+    const cat = CATEGORIES[state.categoryKey];
+    const turnName = state.players[state.turn];
+    const isFirstBid = state.bid === 0;
+    const maxReached = state.bid >= poolSize();
+
+    let actionsHtml = '';
+    if(isFirstBid){
+      actionsHtml = `
+        <div class="mgame-actions">
+          <input type="number" id="mg-bid-input" min="1" max="${poolSize()}" placeholder="N°">
+          <button type="button" class="btn btn-solid" id="mg-bid-submit">Apostar</button>
+        </div>`;
+    } else if(maxReached){
+      actionsHtml = `
+        <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px;">Se llegó al máximo de ${poolSize()} respuestas posibles. Ya no se puede subir más.</p>
+        <div class="mgame-actions">
+          <button type="button" class="btn btn-danger" id="mg-challenge">¡Mentiroso!</button>
+        </div>`;
+    } else {
+      actionsHtml = `
+        <div class="mgame-actions">
+          <input type="number" id="mg-bid-input" min="${state.bid + 1}" max="${poolSize()}" placeholder="N°">
+          <button type="button" class="btn btn-solid" id="mg-bid-submit">Subir apuesta</button>
+          <button type="button" class="btn btn-danger" id="mg-challenge">¡Mentiroso!</button>
+        </div>`;
+    }
+
+    el.innerHTML = `
+      <button type="button" class="mgame-back" id="mg-back-setup">&larr; Cambiar configuración</button>
+      <div class="mgame-turn-banner">
+        <div class="whoturn">Turno de ${esc(turnName)}</div>
+        <div class="sub">Categoría: ${esc(cat.label)}</div>
+      </div>
+      <div class="mgame-bid-display">
+        <div class="num">${state.bid}</div>
+        <div class="lbl">${state.bidder === null ? 'Todavía no hay apuesta — decí cuántos podés nombrar' : `${esc(state.players[state.bidder])} dice que puede nombrar ${state.bid} ${esc(cat.short)}`}</div>
+      </div>
+      <div class="mgame-error" id="mg-bid-error"></div>
+      ${actionsHtml}
+      <div style="text-align:center;margin-top:22px;">
+        <span style="color:var(--text-muted);font-size:12.5px;">${esc(state.players[0])} ${state.scores[0]} — ${state.scores[1]} ${esc(state.players[1])}</span>
+      </div>
+    `;
+
+    el.querySelector('#mg-back-setup').addEventListener('click', () => {
+      state.screen = 'setup';
+      render();
+    });
+
+    const submitBtn = el.querySelector('#mg-bid-submit');
+    if(submitBtn){
+      const doBid = () => {
+        const input = el.querySelector('#mg-bid-input');
+        const errEl = el.querySelector('#mg-bid-error');
+        const val = parseInt(input.value, 10);
+        const min = isFirstBid ? 1 : state.bid + 1;
+        if(isNaN(val) || val < min || val > poolSize()){
+          errEl.textContent = `Ingresá un número entre ${min} y ${poolSize()}.`;
+          return;
+        }
+        state.bid = val;
+        state.bidder = state.turn;
+        state.turn = state.turn === 0 ? 1 : 0;
+        render();
+      };
+      submitBtn.addEventListener('click', doBid);
+      el.querySelector('#mg-bid-input').addEventListener('keydown', e => { if(e.key === 'Enter') doBid(); });
+    }
+
+    const challengeBtn = el.querySelector('#mg-challenge');
+    if(challengeBtn){
+      challengeBtn.addEventListener('click', () => {
+        startChallenge();
+      });
+    }
+  }
+
+  // -------- CHALLENGE SCREEN --------
+  function startChallenge(){
+    state.screen = 'challenge';
+    state.timeLeft = state.timeLimit;
+    state.answersGiven = [];
+    state.usedIdx = new Set();
+    state.failReason = '';
+    render();
+    pause();
+    state.timerId = setInterval(() => {
+      state.timeLeft -= 1;
+      if(state.timeLeft <= 0){
+        pause();
+        finishChallenge(false, 'tiempo');
+        return;
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+
+  function updateTimerDisplay(){
+    const t = document.getElementById('mg-timer');
+    if(t){
+      t.textContent = state.timeLeft + 's';
+      t.classList.toggle('low', state.timeLeft <= 10);
+    }
+  }
+
+  function renderChallenge(el){
+    const cat = CATEGORIES[state.categoryKey];
+    const bidderName = state.players[state.bidder];
+    el.innerHTML = `
+      <div class="mgame-turn-banner">
+        <div class="whoturn">${esc(bidderName)} tiene que nombrar ${state.bid} ${esc(cat.short)}</div>
+        <div class="sub">Sin repetir y sin equivocarse. ¡Vamos!</div>
+      </div>
+      <div class="mgame-challenge-top">
+        <div class="mgame-progress"><span>${state.answersGiven.length}</span> / ${state.bid}</div>
+        <div class="mgame-timer ${state.timeLeft <= 10 ? 'low' : ''}" id="mg-timer">${state.timeLeft}s</div>
+      </div>
+      <div class="mgame-feedback" id="mg-feedback"></div>
+      <div class="mgame-answer-input">
+        <input type="text" id="mg-answer" placeholder="Escribí un nombre y Enter..." autocomplete="off">
+        <button type="button" class="btn btn-solid" id="mg-answer-submit">Enviar</button>
+      </div>
+      <div class="mgame-chips" id="mg-chips">
+        ${state.answersGiven.map(a => `<span class="mgame-chip">${esc(a)}</span>`).join('')}
+      </div>
+    `;
+
+    const input = el.querySelector('#mg-answer');
+    input.focus();
+    const submit = () => {
+      const raw = input.value;
+      if(!raw.trim()) return;
+      handleAnswer(raw);
+      input.value = '';
+      input.focus();
+    };
+    el.querySelector('#mg-answer-submit').addEventListener('click', submit);
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+  }
+
+  function handleAnswer(raw){
+    const cat = CATEGORIES[state.categoryKey];
+    const norm = normalize(raw);
+    const feedback = document.getElementById('mg-feedback');
+
+    let foundIdx = -1;
+    for(let i = 0; i < cat.items.length; i++){
+      if(state.usedIdx.has(i)) continue;
+      const item = cat.items[i];
+      if(item.aliases.some(a => normalize(a) === norm)){
+        foundIdx = i;
+        break;
+      }
+    }
+
+    if(foundIdx === -1){
+      // check if it's a valid answer but already used (duplicate)
+      const isKnownButUsed = cat.items.some((item, i) => state.usedIdx.has(i) && item.aliases.some(a => normalize(a) === norm));
+      if(isKnownButUsed){
+        pause();
+        finishChallenge(false, 'duplicado', raw);
+      } else {
+        pause();
+        finishChallenge(false, 'invalido', raw);
+      }
+      return;
+    }
+
+    state.usedIdx.add(foundIdx);
+    state.answersGiven.push(cat.items[foundIdx].display);
+    if(feedback){ feedback.textContent = ''; feedback.className = 'mgame-feedback'; }
+
+    if(state.answersGiven.length >= state.bid){
+      pause();
+      finishChallenge(true);
+      return;
+    }
+    render();
+  }
+
+  // -------- RESULT --------
+  function finishChallenge(success, reason, badAnswer){
+    state.roundsPlayed++;
+    if(success){
+      state.scores[state.bidder]++;
+    } else {
+      const challenger = state.bidder === 0 ? 1 : 0;
+      state.scores[challenger]++;
+    }
+    state.failReason = reason || '';
+    state.lastBadAnswer = badAnswer || '';
+    state.lastSuccess = success;
+    state.screen = 'result';
+    // alternate who starts next round
+    state.starter = state.starter === 0 ? 1 : 0;
+    render();
+  }
+
+  function renderResult(el){
+    const cat = CATEGORIES[state.categoryKey];
+    const bidderName = state.players[state.bidder];
+    const challengerName = state.players[state.bidder === 0 ? 1 : 0];
+    let winnerName, desc;
+
+    if(state.lastSuccess){
+      winnerName = bidderName;
+      desc = `${esc(bidderName)} nombró correctamente los ${state.bid} ${esc(cat.short)} antes de que se acabara el tiempo.`;
+    } else {
+      winnerName = challengerName;
+      if(state.failReason === 'tiempo'){
+        desc = `${esc(bidderName)} se quedó sin tiempo. Le faltaban ${state.bid - state.answersGiven.length} respuestas.`;
+      } else if(state.failReason === 'duplicado'){
+        desc = `${esc(bidderName)} repitió una respuesta: <span class="missing">"${esc(state.lastBadAnswer)}"</span> ya la había dicho.`;
+      } else {
+        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(state.lastBadAnswer)}"</span> no está en la lista.`;
+      }
+    }
+
+    el.innerHTML = `
+      <div class="mgame-result">
+        <div class="winner">🏆 ${esc(winnerName)} gana la ronda</div>
+        <div class="desc">${desc}</div>
+        <div class="mgame-score">
+          <div><div class="n">${state.scores[0]}</div><div class="l">${esc(state.players[0])}</div></div>
+          <div><div class="n">${state.scores[1]}</div><div class="l">${esc(state.players[1])}</div></div>
+        </div>
+        <div class="mgame-actions">
+          <button type="button" class="btn btn-solid" id="mg-next-round">Otra ronda (misma categoría)</button>
+          <button type="button" class="btn btn-outline" id="mg-change-cat">Cambiar categoría</button>
+        </div>
+      </div>
+    `;
+
+    el.querySelector('#mg-next-round').addEventListener('click', () => {
+      startRound();
+    });
+    el.querySelector('#mg-change-cat').addEventListener('click', () => {
+      state.screen = 'setup';
+      render();
+    });
+  }
+
+  // ==================== MODO ONLINE ====================
+  let socket = null;
+  const online = {
+    code: null,
+    myIndex: null,
+    myName: '',
+    tab: 'create',
+    joinCodeInput: '',
+    error: '',
+    state: null,
+    pendingCategory: null,
+    pendingTime: 45
+  };
+
+  function ensureSocket(){
+    if(socket) return socket;
+    socket = io();
+    socket.on('mentiroso:state', (s) => {
+      online.state = s;
+      online.error = '';
+      if(state.mode === 'online') render();
+    });
+    socket.on('mentiroso:tick', ({ timeLeft }) => {
+      if(online.state) online.state.timeLeft = timeLeft;
+      const t = document.getElementById('mg-online-timer');
+      if(t){ t.textContent = timeLeft + 's'; t.classList.toggle('low', timeLeft <= 10); }
+      const p = document.getElementById('mg-online-progress-wrap');
+      // no-op, chips/progress handled on full state updates
+    });
+    socket.on('mentiroso:peer-left', () => {
+      online.error = 'El otro jugador se desconectó de la sala.';
+      if(state.mode === 'online') render();
+    });
+    socket.on('disconnect', () => {
+      online.error = 'Se perdió la conexión con el servidor. Reconectando...';
+      if(state.mode === 'online') render();
+    });
+    return socket;
+  }
+
+  function leaveOnlineRoom(){
+    if(socket) socket.emit('mentiroso:leave');
+    online.code = null;
+    online.state = null;
+    online.myIndex = null;
+    online.error = '';
+    online.pendingCategory = null;
+    state.mode = null;
+    render();
+  }
+
+  function onlineBackBtn(){
+    return `<button type="button" class="mgame-back" id="mg-back-online">&larr; Salir de la sala</button>`;
+  }
+  function attachOnlineBack(el){
+    const b = el.querySelector('#mg-back-online');
+    if(b) b.addEventListener('click', leaveOnlineRoom);
+  }
+  function playersBar(s){
+    return `<div class="mgame-players-online">
+      ${s.players.map((n, i) => {
+        if(!n) return `<span>Esperando jugador...</span>`;
+        const cls = (i === online.myIndex ? 'me ' : '') + (!s.connected[i] ? 'off' : '');
+        return `<span class="${cls.trim()}">${esc(n)}${i === online.myIndex ? ' (vos)' : ''}${!s.connected[i] ? ' · desconectado' : ''}</span>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function renderOnline(el){
+    if(!online.code) return renderOnlineEntry(el);
+    const s = online.state;
+    if(!s){
+      el.innerHTML = `${onlineBackBtn()}<p style="text-align:center;color:var(--text-muted);margin-top:16px;">Conectando con la sala...</p>`;
+      attachOnlineBack(el);
+      return;
+    }
+    if(s.screen === 'lobby') return renderOnlineLobby(el, s);
+    if(s.screen === 'setup') return renderOnlineSetup(el, s);
+    if(s.screen === 'bid') return renderOnlineBid(el, s);
+    if(s.screen === 'challenge') return renderOnlineChallenge(el, s);
+    if(s.screen === 'result') return renderOnlineResult(el, s);
+  }
+
+  function renderOnlineEntry(el){
+    el.innerHTML = `
+      <button type="button" class="mgame-back" id="mg-back-mode">&larr; Volver</button>
+      <div class="mgame-online-panel">
+        <div class="mgame-field">
+          <label for="mg-online-name">Tu nombre</label>
+          <input type="text" id="mg-online-name" maxlength="18" placeholder="Ej. Davis" value="${esc(online.myName)}">
+        </div>
+        <div class="mgame-online-tabs">
+          <button type="button" data-tab="create" class="${online.tab === 'create' ? 'active' : ''}">Crear sala</button>
+          <button type="button" data-tab="join" class="${online.tab === 'join' ? 'active' : ''}">Unirme con código</button>
+        </div>
+        ${online.tab === 'join' ? `
+        <div class="mgame-field">
+          <label for="mg-online-code">Código de sala</label>
+          <input type="text" id="mg-online-code" maxlength="5" placeholder="Ej. AB12C" style="text-transform:uppercase;letter-spacing:3px;" value="${esc(online.joinCodeInput)}">
+        </div>` : `<p style="color:var(--text-muted);font-size:13px;margin:-4px 0 16px 0;">Vamos a generar un código para que se lo pases a tu rival, desde cualquier celu o PC.</p>`}
+        <div class="mgame-error" id="mg-online-error">${esc(online.error || '')}</div>
+        <div class="mgame-actions">
+          <button type="button" class="btn btn-solid" id="mg-online-go">${online.tab === 'create' ? 'Crear sala' : 'Unirme'}</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('#mg-back-mode').addEventListener('click', () => {
+      state.mode = null;
+      online.error = '';
+      render();
+    });
+    el.querySelectorAll('[data-tab]').forEach(b => {
+      b.addEventListener('click', () => { online.tab = b.getAttribute('data-tab'); online.error = ''; render(); });
+    });
+    el.querySelector('#mg-online-name').addEventListener('input', e => { online.myName = e.target.value; });
+    const codeInput = el.querySelector('#mg-online-code');
+    if(codeInput){
+      codeInput.addEventListener('input', e => { online.joinCodeInput = e.target.value.toUpperCase(); });
+      codeInput.addEventListener('keydown', e => { if(e.key === 'Enter') el.querySelector('#mg-online-go').click(); });
+    }
+
+    el.querySelector('#mg-online-go').addEventListener('click', () => {
+      const name = (online.myName || '').trim() || 'Jugador';
+      online.myName = name;
+      online.error = '';
+      const sock = ensureSocket();
+      if(online.tab === 'create'){
+        sock.emit('mentiroso:create', { playerName: name }, (res) => {
+          if(!res || !res.ok){
+            online.error = (res && res.error) || 'No se pudo crear la sala.';
+            render();
+            return;
+          }
+          online.code = res.code;
+          online.myIndex = res.playerIndex;
+          render();
+        });
+      } else {
+        const code = (online.joinCodeInput || '').trim().toUpperCase();
+        if(!code){ online.error = 'Ingresá el código de la sala.'; render(); return; }
+        sock.emit('mentiroso:join', { code, playerName: name }, (res) => {
+          if(!res || !res.ok){
+            online.error = (res && res.error) || 'No se pudo unir a la sala.';
+            render();
+            return;
+          }
+          online.code = res.code;
+          online.myIndex = res.playerIndex;
+          render();
+        });
+      }
+    });
+  }
+
+  function renderOnlineLobby(el, s){
+    el.innerHTML = `
+      ${onlineBackBtn()}
+      ${playersBar(s)}
+      <div class="mgame-room-code">
+        <div class="code">${esc(s.code)}</div>
+        <div class="lbl">Compartí este código con tu rival para que se una desde su celu o PC</div>
+      </div>
+      <p class="mgame-waiting">Esperando a que se conecte el segundo jugador...</p>
+      ${online.error ? `<div class="mgame-error">${esc(online.error)}</div>` : ''}
+    `;
+    attachOnlineBack(el);
+  }
+
+  function renderOnlineSetup(el, s){
+    if(online.myIndex !== 0){
+      el.innerHTML = `
+        ${onlineBackBtn()}
+        ${playersBar(s)}
+        <p style="text-align:center;color:var(--text-muted);margin-top:20px;">Esperando a que ${esc(s.players[0] || 'el anfitrión')} elija la categoría y arranque la partida...</p>
+      `;
+      attachOnlineBack(el);
+      return;
+    }
+    const cats = s.categoriesMeta || [];
+    el.innerHTML = `
+      ${onlineBackBtn()}
+      ${playersBar(s)}
+      <div class="mgame-field" style="margin-bottom:8px;">
+        <label for="mg-online-time">Tiempo para responder cuando te cantan mentiroso (segundos)</label>
+        <input type="number" id="mg-online-time" min="10" max="180" step="5" value="${online.pendingTime}">
+        <div class="mgame-presets" id="mg-online-presets">
+          ${TIME_PRESETS.map(t => `<button type="button" data-t="${t}" class="${t === online.pendingTime ? 'active' : ''}">${t}s</button>`).join('')}
+        </div>
+      </div>
+      <label style="font-size:13px;color:var(--text-muted);font-weight:500;display:block;margin:20px 0 10px 0;">Elegí una categoría</label>
+      <div class="cat-grid">
+        ${cats.map(c => `<div class="cat-card ${online.pendingCategory === c.key ? 'selected' : ''}" data-cat="${c.key}">
+          <h4>${esc(c.label)}</h4>
+          <p>${esc(c.hint)}</p>
+          <span class="count">${c.count} respuestas posibles</span>
+        </div>`).join('')}
+      </div>
+      <div class="mgame-error" id="mg-online-setup-error"></div>
+      <div class="mgame-actions">
+        <button type="button" class="btn btn-solid" id="mg-online-start">Empezar partida</button>
+      </div>
+    `;
+    attachOnlineBack(el);
+    el.querySelectorAll('.cat-card').forEach(card => {
+      card.addEventListener('click', () => { online.pendingCategory = card.getAttribute('data-cat'); render(); });
+    });
+    el.querySelectorAll('#mg-online-presets button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        online.pendingTime = parseInt(btn.getAttribute('data-t'), 10);
+        el.querySelector('#mg-online-time').value = online.pendingTime;
+        el.querySelectorAll('#mg-online-presets button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+    el.querySelector('#mg-online-time').addEventListener('input', e => {
+      let v = parseInt(e.target.value, 10);
+      if(isNaN(v)) v = 45;
+      v = Math.max(10, Math.min(180, v));
+      online.pendingTime = v;
+    });
+    el.querySelector('#mg-online-start').addEventListener('click', () => {
+      if(!online.pendingCategory){
+        el.querySelector('#mg-online-setup-error').textContent = 'Elegí una categoría para empezar.';
+        return;
+      }
+      socket.emit('mentiroso:setup', { categoryKey: online.pendingCategory, timeLimit: online.pendingTime });
+    });
+  }
+
+  function renderOnlineBid(el, s){
+    const isFirstBid = s.bid === 0;
+    const maxReached = s.bid >= s.category.count;
+    const myTurn = s.turn === online.myIndex;
+    let actionsHtml = '';
+    if(myTurn){
+      if(isFirstBid){
+        actionsHtml = `<div class="mgame-actions">
+          <input type="number" id="mg-online-bid-input" min="1" max="${s.category.count}" placeholder="N°">
+          <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Apostar</button>
+        </div>`;
+      } else if(maxReached){
+        actionsHtml = `<p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px;">Se llegó al máximo de ${s.category.count} respuestas posibles. Ya no se puede subir más.</p>
+        <div class="mgame-actions"><button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button></div>`;
+      } else {
+        actionsHtml = `<div class="mgame-actions">
+          <input type="number" id="mg-online-bid-input" min="${s.bid + 1}" max="${s.category.count}" placeholder="N°">
+          <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Subir apuesta</button>
+          <button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button>
+        </div>`;
+      }
+    } else {
+      actionsHtml = `<p style="text-align:center;color:var(--text-muted);font-size:13.5px;">Esperando la jugada de ${esc(s.players[s.turn])}...</p>`;
+    }
+
+    el.innerHTML = `
+      ${playersBar(s)}
+      <div class="mgame-turn-banner">
+        <div class="whoturn">${myTurn ? 'Tu turno' : `Turno de ${esc(s.players[s.turn])}`}</div>
+        <div class="sub">Categoría: ${esc(s.category.label)}</div>
+      </div>
+      <div class="mgame-bid-display">
+        <div class="num">${s.bid}</div>
+        <div class="lbl">${s.bidder === null ? 'Todavía no hay apuesta' : `${esc(s.players[s.bidder])} dice que puede nombrar ${s.bid} ${esc(s.category.short)}`}</div>
+      </div>
+      <div class="mgame-error" id="mg-online-bid-error"></div>
+      ${actionsHtml}
+      <div style="text-align:center;margin-top:22px;">
+        <span style="color:var(--text-muted);font-size:12.5px;">${esc(s.players[0])} ${s.scores[0]} — ${s.scores[1]} ${esc(s.players[1])}</span>
+      </div>
+    `;
+
+    const submitBtn = el.querySelector('#mg-online-bid-submit');
+    if(submitBtn){
+      const doBid = () => {
+        const input = el.querySelector('#mg-online-bid-input');
+        const val = parseInt(input.value, 10);
+        const min = isFirstBid ? 1 : s.bid + 1;
+        if(isNaN(val) || val < min || val > s.category.count){
+          el.querySelector('#mg-online-bid-error').textContent = `Ingresá un número entre ${min} y ${s.category.count}.`;
+          return;
+        }
+        socket.emit('mentiroso:bid', { value: val });
+      };
+      submitBtn.addEventListener('click', doBid);
+      el.querySelector('#mg-online-bid-input').addEventListener('keydown', e => { if(e.key === 'Enter') doBid(); });
+    }
+    const challengeBtn = el.querySelector('#mg-online-challenge');
+    if(challengeBtn){
+      challengeBtn.addEventListener('click', () => socket.emit('mentiroso:challenge'));
+    }
+  }
+
+  function renderOnlineChallenge(el, s){
+    const isMe = s.bidder === online.myIndex;
+    el.innerHTML = `
+      ${playersBar(s)}
+      <div class="mgame-turn-banner">
+        <div class="whoturn">${esc(s.players[s.bidder])} tiene que nombrar ${s.bid} ${esc(s.category.short)}</div>
+        <div class="sub">${isMe ? 'Sin repetir y sin equivocarte. ¡Vamos!' : 'Mirando en vivo...'}</div>
+      </div>
+      <div class="mgame-challenge-top">
+        <div class="mgame-progress"><span>${s.answersGiven.length}</span> / ${s.bid}</div>
+        <div class="mgame-timer ${s.timeLeft <= 10 ? 'low' : ''}" id="mg-online-timer">${s.timeLeft}s</div>
+      </div>
+      ${isMe ? `<div class="mgame-answer-input">
+        <input type="text" id="mg-online-answer" placeholder="Escribí un nombre y Enter..." autocomplete="off">
+        <button type="button" class="btn btn-solid" id="mg-online-answer-submit">Enviar</button>
+      </div>` : ''}
+      <div class="mgame-chips" id="mg-online-chips">
+        ${s.answersGiven.map(a => `<span class="mgame-chip">${esc(a)}</span>`).join('')}
+      </div>
+    `;
+    if(isMe){
+      const input = el.querySelector('#mg-online-answer');
+      input.focus();
+      const submit = () => {
+        const raw = input.value;
+        if(!raw.trim()) return;
+        socket.emit('mentiroso:answer', { text: raw });
+        input.value = '';
+        input.focus();
+      };
+      el.querySelector('#mg-online-answer-submit').addEventListener('click', submit);
+      input.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+    }
+  }
+
+  function renderOnlineResult(el, s){
+    const bidderName = s.players[s.bidder];
+    const challengerName = s.players[s.bidder === 0 ? 1 : 0];
+    let winnerName, desc;
+    if(s.lastSuccess){
+      winnerName = bidderName;
+      desc = `${esc(bidderName)} nombró correctamente los ${s.bid} ${esc(s.category.short)} antes de que se acabara el tiempo.`;
+    } else {
+      winnerName = challengerName;
+      if(s.failReason === 'tiempo'){
+        desc = `${esc(bidderName)} se quedó sin tiempo. Le faltaban ${s.bid - s.answersGiven.length} respuestas.`;
+      } else if(s.failReason === 'duplicado'){
+        desc = `${esc(bidderName)} repitió una respuesta: <span class="missing">"${esc(s.lastBadAnswer)}"</span> ya la había dicho.`;
+      } else {
+        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(s.lastBadAnswer)}"</span> no está en la lista.`;
+      }
+    }
+    const isHost = online.myIndex === 0;
+    el.innerHTML = `
+      ${onlineBackBtn()}
+      ${playersBar(s)}
+      <div class="mgame-result">
+        <div class="winner">🏆 ${esc(winnerName)} gana la ronda</div>
+        <div class="desc">${desc}</div>
+        <div class="mgame-score">
+          <div><div class="n">${s.scores[0]}</div><div class="l">${esc(s.players[0])}</div></div>
+          <div><div class="n">${s.scores[1]}</div><div class="l">${esc(s.players[1])}</div></div>
+        </div>
+        ${isHost ? `<div class="mgame-actions">
+          <button type="button" class="btn btn-solid" id="mg-online-next-round">Otra ronda (misma categoría)</button>
+          <button type="button" class="btn btn-outline" id="mg-online-change-cat">Cambiar categoría</button>
+        </div>` : `<p style="text-align:center;color:var(--text-muted);font-size:13px;">Esperando a que ${esc(s.players[0])} decida la próxima ronda...</p>`}
+      </div>
+    `;
+    attachOnlineBack(el);
+    if(isHost){
+      el.querySelector('#mg-online-next-round').addEventListener('click', () => socket.emit('mentiroso:nextRound'));
+      el.querySelector('#mg-online-change-cat').addEventListener('click', () => socket.emit('mentiroso:changeCategory'));
+    }
+  }
+
+  window.MentirosoGame = { render, pause };
+})();
+</script>
+
+</body>
+</html>
