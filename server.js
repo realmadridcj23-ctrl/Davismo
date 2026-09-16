@@ -1,9 +1,11 @@
+require('dotenv').config();
+
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const { CATEGORIES, normalize } = require('./gameData');
+const { CATEGORIES, normalize, referenceNames } = require('./gameData');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +20,145 @@ if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
 
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
+
+// ==================== IA (Anthropic Claude) ====================
+// Necesita la variable de entorno ANTHROPIC_API_KEY. Conseguí una clave en
+// https://console.anthropic.com/ y ponela en un archivo .env (mirá .env.example)
+// o como variable de entorno de tu hosting.
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
+
+function aiAvailable() {
+  return !!ANTHROPIC_API_KEY;
+}
+
+async function callClaude({ system, messages, maxTokens }) {
+  if (!aiAvailable()) {
+    const err = new Error('ANTHROPIC_API_KEY no configurada');
+    err.code = 'NO_API_KEY';
+    throw err;
+  }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: maxTokens || 400,
+      system,
+      messages
+    })
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const err = new Error('Anthropic API error ' + res.status + ': ' + text);
+    err.code = 'API_ERROR';
+    throw err;
+  }
+
+  const data = await res.json();
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('\n')
+    .trim();
+  return text;
+}
+
+function extractJson(text) {
+  // Saca el texto de un posible bloque ```json ... ``` y parsea.
+  const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('La IA no devolvió JSON válido');
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+// ---- Verificación de una respuesta contra UNA categoría puntual ----
+async function verifyAnswerInCategory(query, categoryKey) {
+  const cat = CATEGORIES[categoryKey];
+  if (!cat) throw new Error('Categoría inválida');
+
+  const examples = referenceNames(categoryKey).join(', ');
+  const system =
+    'Sos el árbitro de un juego de trivia futbolera llamado "Mentiroso Futbolero". ' +
+    'Te doy una categoría y una respuesta que dio un jugador, y tenés que decidir si esa ' +
+    'respuesta es correcta para esa categoría, usando tu conocimiento real de fútbol (no solo ' +
+    'la lista de ejemplos que te paso, que es solo una referencia parcial para orientarte). ' +
+    'Aceptá apodos, apellidos solos, errores menores de tipeo/acentos, y nombres en cualquier ' +
+    'formato razonable, siempre que se refieran sin ambigüedad a una respuesta correcta. ' +
+    'Si la respuesta es ambigua, incompleta, de otra categoría, o simplemente incorrecta, marcala como inválida. ' +
+    'Respondé ÚNICAMENTE con un objeto JSON, sin texto extra, con este formato exacto: ' +
+    '{"valid": true|false, "display": "Nombre canónico bien escrito, o null si no es válido", "reason": "explicación breve en español, una frase"}';
+
+  const userMsg =
+    'Categoría: "' + cat.label + '"\n' +
+    'Descripción: ' + cat.hint + '\n' +
+    'Ejemplos de referencia (no exhaustivo): ' + examples + '\n' +
+    'Respuesta del jugador a evaluar: "' + query + '"';
+
+  const raw = await callClaude({
+    system,
+    messages: [{ role: 'user', content: userMsg }],
+    maxTokens: 300
+  });
+
+  const parsed = extractJson(raw);
+  return {
+    valid: !!parsed.valid,
+    display: parsed.valid ? (parsed.display || query) : null,
+    reason: parsed.reason || ''
+  };
+}
+
+// ---- Verificación contra TODAS las categorías (para el asistente) ----
+async function verifyAnswerAllCategories(query) {
+  const keys = Object.keys(CATEGORIES);
+  const catBlocks = keys
+    .map(
+      k =>
+        '- key: "' +
+        k +
+        '", categoría: "' +
+        CATEGORIES[k].label +
+        '", descripción: ' +
+        CATEGORIES[k].hint +
+        ' Ejemplos: ' +
+        referenceNames(k).slice(0, 12).join(', ') +
+        '...'
+    )
+    .join('\n');
+
+  const system =
+    'Sos el árbitro de un juego de trivia futbolera llamado "Mentiroso Futbolero". ' +
+    'Te paso una lista de categorías posibles y una respuesta de un jugador. Decidí en cuál o ' +
+    'cuáles categorías esa respuesta sería válida, usando tu conocimiento real de fútbol (los ' +
+    'ejemplos son solo referencia parcial, no la única verdad). Si no es válida en ninguna, la ' +
+    'lista queda vacía. Respondé ÚNICAMENTE con JSON, sin texto extra, formato exacto: ' +
+    '{"matches": [{"categoryKey": "clave_exacta", "display": "Nombre canónico bien escrito"}]}';
+
+  const userMsg = 'Categorías:\n' + catBlocks + '\n\nRespuesta del jugador a evaluar: "' + query + '"';
+
+  const raw = await callClaude({
+    system,
+    messages: [{ role: 'user', content: userMsg }],
+    maxTokens: 400
+  });
+
+  const parsed = extractJson(raw);
+  const matches = Array.isArray(parsed.matches) ? parsed.matches : [];
+  return matches
+    .filter(m => m && CATEGORIES[m.categoryKey])
+    .map(m => ({
+      categoryKey: m.categoryKey,
+      categoryLabel: CATEGORIES[m.categoryKey].label,
+      display: m.display || query
+    }));
+}
 
 // ==================== REGISTRO ====================
 function readUsers() {
@@ -76,14 +217,21 @@ app.get('/api/miembros', (req, res) => {
 });
 
 // ==================== ASISTENTE (IA de davismo) ====================
-// Endpoint simple, sin estado de partida: solo dice si un nombre existe
-// en una o varias categorías del Mentiroso, usando la misma data (gameData.js)
-// que usa el juego, así nunca se puede desincronizar.
+function categoriesMeta() {
+  return Object.keys(CATEGORIES).map(key => {
+    const c = CATEGORIES[key];
+    return { key, label: c.label, short: c.short, hint: c.hint, count: c.items.length };
+  });
+}
+
 app.get('/api/categorias', (req, res) => {
   res.json({ categories: categoriesMeta() });
 });
 
-app.post('/api/asistente/verificar', (req, res) => {
+// Verificación de una respuesta contra una categoría (o todas), usando IA real.
+// La usan: 1) el botón "Asistente" para consultar una respuesta suelta,
+//          2) el modo LOCAL del Mentiroso (mismo dispositivo) para validar en vivo.
+app.post('/api/asistente/verificar', async (req, res) => {
   const body = req.body || {};
   const query = (body.query || '').toString().trim();
   const categoryKey = (body.categoryKey || '').toString().trim();
@@ -94,36 +242,84 @@ app.post('/api/asistente/verificar', (req, res) => {
   if (categoryKey && !CATEGORIES[categoryKey]) {
     return res.status(400).json({ ok: false, error: 'Esa categoría no existe.' });
   }
+  if (!aiAvailable()) {
+    return res.status(503).json({
+      ok: false,
+      error:
+        'La IA todavía no está configurada en el servidor. Definí la variable de entorno ANTHROPIC_API_KEY (ver .env.example) y reiniciá el servidor.'
+    });
+  }
 
-  const norm = normalize(query);
-  const keysToCheck = categoryKey ? [categoryKey] : Object.keys(CATEGORIES);
-
-  const matches = [];
-  keysToCheck.forEach(key => {
-    const cat = CATEGORIES[key];
-    const found = cat.items.find(item => item.aliases.some(a => normalize(a) === norm));
-    if (found) {
-      matches.push({ categoryKey: key, categoryLabel: cat.label, display: found.display });
+  try {
+    if (categoryKey) {
+      const result = await verifyAnswerInCategory(query, categoryKey);
+      const matches = result.valid
+        ? [{ categoryKey, categoryLabel: CATEGORIES[categoryKey].label, display: result.display }]
+        : [];
+      return res.json({ ok: true, query, valid: result.valid, matches, reason: result.reason });
     }
-  });
+    const matches = await verifyAnswerAllCategories(query);
+    return res.json({ ok: true, query, valid: matches.length > 0, matches });
+  } catch (e) {
+    console.error('Error verificando respuesta con IA:', e);
+    return res.status(502).json({
+      ok: false,
+      error: 'No se pudo consultar a la IA en este momento. Probá de nuevo en unos segundos.'
+    });
+  }
+});
 
-  res.json({
-    ok: true,
-    query,
-    valid: matches.length > 0,
-    matches
-  });
+// Asistente de IA general de davismo: se le puede preguntar cualquier cosa.
+app.post('/api/asistente/chat', async (req, res) => {
+  const body = req.body || {};
+  const message = (body.message || '').toString().trim();
+  const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
+
+  if (!message) {
+    return res.status(400).json({ ok: false, error: 'Escribí algo para preguntarme.' });
+  }
+  if (!aiAvailable()) {
+    return res.status(503).json({
+      ok: false,
+      error:
+        'La IA todavía no está configurada en el servidor. Definí la variable de entorno ANTHROPIC_API_KEY (ver .env.example) y reiniciá el servidor.'
+    });
+  }
+
+  const system =
+    'Sos el Asistente de IA de davismo, la comunidad y el sitio de fútbol de "davismo". ' +
+    'Hablás en español rioplatense, con onda, cercano, pero sin exagerar el voseo ni ser payasesco. ' +
+    'Podés responder cualquier pregunta (de fútbol, del sitio, o de cualquier otro tema en general), ' +
+    'ayudar a explicar cómo se juega el "Mentiroso Futbolero" (el juego de la casa: se apuesta cuántos ' +
+    'nombres se pueden decir de una categoría futbolera, y si te cantan "mentiroso" tenés que nombrarlos ' +
+    'todos sin repetir antes de que se acabe el tiempo), o simplemente charlar. Respuestas concisas ' +
+    '(un par de párrafos como mucho salvo que pidan algo más largo). No inventes datos de fútbol que no ' +
+    'sepas con certeza; si no estás seguro, decilo.';
+
+  const messages = history
+    .filter(m => m && (m.role === 'user' || m.role === 'assistant') && m.content)
+    .map(m => ({ role: m.role, content: String(m.content).slice(0, 2000) }));
+  messages.push({ role: 'user', content: message });
+
+  try {
+    const reply = await callClaude({ system, messages, maxTokens: 700 });
+    return res.json({ ok: true, reply });
+  } catch (e) {
+    console.error('Error en el asistente de chat:', e);
+    return res.status(502).json({
+      ok: false,
+      error: 'No me pude conectar con la IA en este momento. Probá de nuevo en unos segundos.'
+    });
+  }
 });
 
 // ==================== MENTIROSO ONLINE ====================
 const rooms = new Map(); // code -> room
 
-function categoriesMeta() {
-  return Object.keys(CATEGORIES).map(key => {
-    const c = CATEGORIES[key];
-    return { key, label: c.label, short: c.short, hint: c.hint, count: c.items.length };
-  });
-}
+// Tope técnico para el input de apuesta (no el máximo real de la categoría:
+// a propósito se puede apostar por encima de lo que existe de verdad, y
+// si te pasás, el tiempo te termina ganando la partida).
+const HARD_MAX_BID = 999;
 
 function genCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -165,7 +361,8 @@ function publicState(room) {
     failReason: room.failReason,
     lastBadAnswer: room.lastBadAnswer,
     lastSuccess: room.lastSuccess,
-    roundsPlayed: room.roundsPlayed
+    roundsPlayed: room.roundsPlayed,
+    pendingCheck: !!room.pendingCheck
   };
 }
 
@@ -184,9 +381,10 @@ function startRound(room) {
   room.turn = room.starter;
   room.bid = 0;
   room.bidder = null;
-  room.usedIdx = new Set();
+  room.acceptedNormalized = [];
   room.answersGiven = [];
   room.failReason = '';
+  room.pendingCheck = false;
   room.screen = 'bid';
   broadcast(room);
 }
@@ -195,8 +393,9 @@ function startChallenge(room) {
   room.screen = 'challenge';
   room.timeLeft = room.timeLimit;
   room.answersGiven = [];
-  room.usedIdx = new Set();
+  room.acceptedNormalized = [];
   room.failReason = '';
+  room.pendingCheck = false;
   stopTimer(room);
   broadcast(room);
   room.timerId = setInterval(() => {
@@ -221,6 +420,7 @@ function finishChallenge(room, success, reason, badAnswer) {
   room.failReason = reason || '';
   room.lastBadAnswer = badAnswer || '';
   room.lastSuccess = success;
+  room.pendingCheck = false;
   room.screen = 'result';
   room.starter = room.starter === 0 ? 1 : 0;
   broadcast(room);
@@ -247,10 +447,11 @@ io.on('connection', socket => {
       turn: 0,
       bid: 0,
       bidder: null,
-      usedIdx: new Set(),
+      acceptedNormalized: [],
       answersGiven: [],
       timeLeft: 0,
       timerId: null,
+      pendingCheck: false,
       scores: [0, 0],
       failReason: '',
       lastBadAnswer: '',
@@ -314,7 +515,7 @@ io.on('connection', socket => {
     if (socket.data.playerIndex !== room.turn) return;
     const isFirstBid = room.bid === 0;
     const min = isFirstBid ? 1 : room.bid + 1;
-    const max = poolSize(room);
+    const max = HARD_MAX_BID; // tope técnico, no el máximo real de la categoría a propósito
     const val = parseInt(payload && payload.value, 10);
     if (isNaN(val) || val < min || val > max) return;
     room.bid = val;
@@ -331,38 +532,68 @@ io.on('connection', socket => {
     startChallenge(room);
   });
 
-  socket.on('mentiroso:answer', payload => {
+  // La verificación de cada respuesta se hace con IA (async), por eso este
+  // handler es async y avisa "pendingCheck" mientras espera la respuesta
+  // del modelo, para que el cliente pueda mostrar "revisando...".
+  socket.on('mentiroso:answer', async payload => {
     const room = getRoom();
     if (!room || room.screen !== 'challenge') return;
     if (socket.data.playerIndex !== room.bidder) return;
+    if (room.pendingCheck) return;
+
     const raw = ((payload && payload.text) || '').toString();
     if (!raw.trim()) return;
-    const cat = CATEGORIES[room.categoryKey];
-    const norm = normalize(raw);
-    let foundIdx = -1;
-    for (let i = 0; i < cat.items.length; i++) {
-      if (room.usedIdx.has(i)) continue;
-      if (cat.items[i].aliases.some(a => normalize(a) === norm)) {
-        foundIdx = i;
-        break;
-      }
+
+    room.pendingCheck = true;
+    io.to(room.code).emit('mentiroso:checking', { text: raw });
+
+    let result = null;
+    let failedToVerify = false;
+    try {
+      result = await verifyAnswerInCategory(raw, room.categoryKey);
+    } catch (e) {
+      console.error('Error verificando respuesta (online):', e);
+      failedToVerify = true;
     }
-    if (foundIdx === -1) {
-      const isKnownButUsed = cat.items.some(
-        (item, i) => room.usedIdx.has(i) && item.aliases.some(a => normalize(a) === norm)
-      );
-      stopTimer(room);
-      finishChallenge(room, false, isKnownButUsed ? 'duplicado' : 'invalido', raw);
+
+    // La sala pudo haber cambiado mientras esperábamos a la IA (ej: se acabó
+    // el tiempo). Si ya no estamos en 'challenge', no hacemos nada más.
+    const freshRoom = rooms.get(room.code);
+    if (!freshRoom || freshRoom.screen !== 'challenge') return;
+
+    freshRoom.pendingCheck = false;
+
+    if (failedToVerify) {
+      io.to(freshRoom.code).emit('mentiroso:answer-error', {
+        message: 'No se pudo verificar con la IA, probá de nuevo.'
+      });
+      broadcast(freshRoom);
       return;
     }
-    room.usedIdx.add(foundIdx);
-    room.answersGiven.push(cat.items[foundIdx].display);
-    if (room.answersGiven.length >= room.bid) {
-      stopTimer(room);
-      finishChallenge(room, true);
+
+    if (!result.valid) {
+      stopTimer(freshRoom);
+      finishChallenge(freshRoom, false, 'invalido', raw);
       return;
     }
-    broadcast(room);
+
+    const canonicalNorm = normalize(result.display);
+    if (freshRoom.acceptedNormalized.includes(canonicalNorm)) {
+      stopTimer(freshRoom);
+      finishChallenge(freshRoom, false, 'duplicado', raw);
+      return;
+    }
+
+    freshRoom.acceptedNormalized.push(canonicalNorm);
+    freshRoom.answersGiven.push(result.display);
+
+    if (freshRoom.answersGiven.length >= freshRoom.bid) {
+      stopTimer(freshRoom);
+      finishChallenge(freshRoom, true);
+      return;
+    }
+
+    broadcast(freshRoom);
   });
 
   socket.on('mentiroso:nextRound', () => {
@@ -404,4 +635,10 @@ io.on('connection', socket => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log('davismo corriendo en http://localhost:' + PORT);
+  if (!aiAvailable()) {
+    console.warn(
+      '⚠️  ANTHROPIC_API_KEY no está configurada: el Asistente de IA y la verificación ' +
+        'de respuestas del Mentiroso no van a funcionar hasta que la definas (ver .env.example).'
+    );
+  }
 });

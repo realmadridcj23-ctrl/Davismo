@@ -360,6 +360,10 @@
   .assistant-status{ font-size:12px; color: var(--text-muted); }
   .assistant-status .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--green-signal); margin-right:6px; }
 
+  .assistant-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .assistant-tab{ background:transparent; border:1px solid var(--line); color: var(--text-muted); padding:9px 16px; border-radius:6px; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif; }
+  .assistant-tab.active, .assistant-tab:hover{ border-color: var(--green-signal); color: var(--green-signal); }
+
   .assistant-cat-row{ margin-bottom:16px; }
   .assistant-cat-row label{ font-size:13px; color: var(--text-muted); font-weight:500; display:block; margin-bottom:7px; }
   .assistant-cat-row select{
@@ -377,6 +381,7 @@
   .chat-bubble.user{ align-self:flex-end; background: var(--green-signal); color:#06280f; font-weight:500; }
   .chat-bubble.bot.ok{ border-color: var(--green-deep); }
   .chat-bubble.bot.bad{ border-color: #7a3a32; }
+  .chat-bubble.bot.thinking{ color: var(--text-muted); font-style: italic; }
   .chat-bubble .match-list{ margin: 6px 0 0 0; padding-left: 18px; }
   .chat-bubble .match-list li{ margin-bottom: 2px; }
 
@@ -452,6 +457,7 @@
   .mgame-result{ text-align:center; }
   .mgame-result .winner{ font-family:'Chakra Petch',sans-serif; font-size:30px; font-weight:700; color: var(--green-signal); margin-bottom:10px; }
   .mgame-result .desc{ color: var(--text-muted); font-size:14px; margin-bottom:22px; line-height:1.6; }
+  .joke-note{ display:inline-block; margin-top:8px; color: var(--green-signal); font-size:13px; }
   .mgame-result .missing{ color: #ff8a7a; }
   .mgame-score{ display:flex; justify-content:center; gap:28px; margin-bottom:26px; }
   .mgame-score div{ text-align:center; }
@@ -480,6 +486,63 @@
   .toast.show{
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+
+  /* ---------- ASISTENTE FLOTANTE ---------- */
+  .assistant-fab-wrap{
+    position: fixed;
+    right: 26px;
+    bottom: 26px;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .assistant-fab{
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 1px solid var(--green-deep);
+    background: var(--green-signal);
+    color: #06280f;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 28px rgba(82,255,134,0.28);
+    animation: assistant-fab-pulse 2.6s ease-in-out infinite;
+    transition: transform .15s ease;
+  }
+  .assistant-fab:hover{ transform: scale(1.06); }
+  .assistant-fab-icon{ font-size: 26px; line-height: 1; }
+  @keyframes assistant-fab-pulse{
+    0%, 100%{ box-shadow: 0 10px 28px rgba(82,255,134,0.28); }
+    50%{ box-shadow: 0 10px 34px rgba(82,255,134,0.5); }
+  }
+  .assistant-fab-bubble{
+    background: var(--bg-panel-2);
+    border: 1px solid var(--line);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+  }
+  .assistant-fab-bubble.show{
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (max-width: 640px){
+    .assistant-fab-wrap{ right: 16px; bottom: 16px; }
+    .assistant-fab{ width: 52px; height: 52px; }
+    .assistant-fab-bubble{ font-size: 12.5px; max-width: 62vw; white-space: normal; text-align: right; }
   }
 
   /* ---------- MENTIROSO ONLINE ---------- */
@@ -533,6 +596,7 @@
     <p>Un espacio para jugar, seguir novedades y estar conectado con la comunidad. Explora los juegos y únete al servidor de Discord.</p>
     <div class="hero-actions">
       <button type="button" class="btn btn-solid" data-open="juegos">Ver juegos</button>
+      <button type="button" class="btn btn-outline" data-open="asistente">Preguntarle a la IA</button>
       <button type="button" class="btn btn-outline" data-open="registro">Registrarme</button>
     </div>
   </div>
@@ -577,6 +641,14 @@
 
 <!-- ---------- TOAST ---------- -->
 <div class="toast" id="toast" aria-live="polite"></div>
+
+<!-- ---------- ASISTENTE FLOTANTE (visible al entrar a la página) ---------- -->
+<div class="assistant-fab-wrap" id="assistant-fab-wrap">
+  <div class="assistant-fab-bubble" id="assistant-fab-bubble">¡Preguntame lo que quieras! 👋</div>
+  <button type="button" class="assistant-fab" id="assistant-fab" data-open="asistente" aria-label="Abrir Asistente de IA">
+    <span class="assistant-fab-icon">🤖</span>
+  </button>
+</div>
 
 <!-- ---------- DISCORD OVERLAY ---------- -->
 <div class="overlay" id="overlay-discord" aria-hidden="true">
@@ -639,7 +711,12 @@
       </div>
     </div>
 
-    <div class="assistant-cat-row">
+    <div class="assistant-tabs">
+      <button type="button" class="assistant-tab active" data-atab="chat">Preguntame lo que sea</button>
+      <button type="button" class="assistant-tab" data-atab="verificar">Revisar una respuesta</button>
+    </div>
+
+    <div class="assistant-cat-row" id="assistant-cat-row" style="display:none;">
       <label for="assistant-category">Categoría a revisar</label>
       <select id="assistant-category">
         <option value="">Todas las categorías</option>
@@ -649,7 +726,7 @@
     <div class="assistant-chat" id="assistant-chat"></div>
 
     <form id="assistant-form" class="assistant-input-row" novalidate>
-      <input type="text" id="assistant-input" placeholder="Escribí un nombre, ej: Rodri..." autocomplete="off">
+      <input type="text" id="assistant-input" placeholder="Preguntame cualquier cosa..." autocomplete="off">
       <button type="submit" class="btn btn-solid">Enviar</button>
     </form>
   </div>
@@ -815,6 +892,24 @@
   });
 })();
 
+// ---------------- Globito de saludo del Asistente flotante ----------------
+(function(){
+  const bubble = document.getElementById('assistant-fab-bubble');
+  const fab = document.getElementById('assistant-fab');
+  if(!bubble || !fab) return;
+  let hideTimer = null;
+
+  function showBubble(){
+    bubble.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => bubble.classList.remove('show'), 6000);
+  }
+
+  setTimeout(showBubble, 1400);
+  bubble.addEventListener('click', () => fab.click());
+  fab.addEventListener('click', () => { bubble.classList.remove('show'); clearTimeout(hideTimer); });
+})();
+
 // ---------------- Registration (backend real, sin window.storage) ----------------
 (function(){
   const form = document.getElementById('registro-form');
@@ -918,9 +1013,14 @@
   const formEl = document.getElementById('assistant-form');
   const inputEl = document.getElementById('assistant-input');
   const categorySelect = document.getElementById('assistant-category');
+  const catRow = document.getElementById('assistant-cat-row');
+  const tabs = document.querySelectorAll('.assistant-tab');
 
   let categoriesLoaded = false;
-  let greeted = false;
+  let mode = 'chat'; // 'chat' | 'verificar'
+  let greetedChat = false;
+  let greetedVerificar = false;
+  let chatHistory = []; // [{role, content}]
 
   function escapeHtml(str){
     const div = document.createElement('div');
@@ -934,6 +1034,7 @@
     div.innerHTML = text;
     chatEl.appendChild(div);
     chatEl.scrollTop = chatEl.scrollHeight;
+    return div;
   }
 
   async function loadCategories(){
@@ -953,18 +1054,37 @@
     }
   }
 
-  function greet(){
-    if(greeted) return;
-    greeted = true;
-    addBubble(
-      'Hola, soy la IA de davismo 🤖. Escribime un nombre (jugador, selección o club, según la categoría) y te digo si es una respuesta válida para el Mentiroso.',
-      'bot'
-    );
+  function setTab(newMode){
+    mode = newMode;
+    tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-atab') === mode));
+    catRow.style.display = mode === 'verificar' ? 'block' : 'none';
+    inputEl.placeholder = mode === 'verificar' ? 'Escribí un nombre, ej: Rodri...' : 'Preguntame cualquier cosa...';
+    chatEl.innerHTML = '';
+    if(mode === 'verificar'){
+      loadCategories();
+      if(!greetedVerificar){
+        greetedVerificar = true;
+      }
+      addBubble(
+        'Escribime un nombre (jugador, selección o club, según la categoría) y te digo si es una respuesta válida para el Mentiroso. La reviso con IA, así que acepta apodos, apellidos solos o errores de tipeo menores.',
+        'bot'
+      );
+    } else {
+      if(!greetedChat){
+        greetedChat = true;
+      }
+      addBubble(
+        'Hola, soy el Asistente de IA de davismo 🤖. Preguntame lo que quieras: de fútbol, del sitio, del Mentiroso, o de cualquier otro tema.',
+        'bot'
+      );
+    }
+    inputEl.focus();
   }
 
   async function checkQuery(query){
     const categoryKey = categorySelect.value;
     addBubble(escapeHtml(query), 'user');
+    const thinking = addBubble('Revisando con la IA...', 'bot', 'thinking');
 
     try{
       const res = await fetch('/api/asistente/verificar', {
@@ -973,6 +1093,7 @@
         body: JSON.stringify({ query, categoryKey })
       });
       const data = await res.json();
+      thinking.remove();
 
       if(!res.ok || !data.ok){
         addBubble(escapeHtml(data.error || 'No pude revisar eso, intentá de nuevo.'), 'bot', 'bad');
@@ -1003,22 +1124,58 @@
         );
       }
     }catch(e){
+      thinking.remove();
       addBubble('No me pude conectar con el servidor. Revisá tu conexión e intentá de nuevo.', 'bot', 'bad');
     }
   }
+
+  async function sendChat(message){
+    addBubble(escapeHtml(message), 'user');
+    const thinking = addBubble('Pensando...', 'bot', 'thinking');
+
+    try{
+      const res = await fetch('/api/asistente/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history: chatHistory })
+      });
+      const data = await res.json();
+      thinking.remove();
+
+      if(!res.ok || !data.ok){
+        addBubble(escapeHtml(data.error || 'No pude responder eso, intentá de nuevo.'), 'bot', 'bad');
+        return;
+      }
+
+      chatHistory.push({ role: 'user', content: message });
+      chatHistory.push({ role: 'assistant', content: data.reply });
+      if(chatHistory.length > 16) chatHistory = chatHistory.slice(-16);
+
+      addBubble(escapeHtml(data.reply).replace(/\n/g, '<br>'), 'bot');
+    }catch(e){
+      thinking.remove();
+      addBubble('No me pude conectar con el servidor. Revisá tu conexión e intentá de nuevo.', 'bot', 'bad');
+    }
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => setTab(btn.getAttribute('data-atab')));
+  });
 
   formEl.addEventListener('submit', function(e){
     e.preventDefault();
     const query = inputEl.value.trim();
     if(!query) return;
     inputEl.value = '';
-    checkQuery(query);
+    if(mode === 'verificar') checkQuery(query);
+    else sendChat(query);
   });
 
   window.DavismoAsistente = {
     onOpen: function(){
-      loadCategories();
-      greet();
+      if(chatEl.children.length === 0){
+        setTab(mode);
+      }
       inputEl.focus();
     }
   };
@@ -1268,7 +1425,6 @@
             return `<div class="cat-card ${sel}" data-cat="${k}">
               <h4>${esc(c.label)}</h4>
               <p>${esc(c.hint)}</p>
-              <span class="count">${c.items.length} respuestas posibles</span>
             </div>`;
           }).join('')}
         </div>
@@ -1345,29 +1501,34 @@
     return CATEGORIES[state.categoryKey].items.length;
   }
 
+  // Tope técnico solo para evitar números absurdos en el input (no tiene
+  // que ver con cuántas respuestas existen de verdad: se puede apostar por
+  // encima del máximo real de la categoría a propósito, como en el juego
+  // de mesa. Si te excedés, el tiempo te va a terminar ganando la partida.
+  const HARD_MAX_BID = 999;
+
   function renderBid(el){
     const cat = CATEGORIES[state.categoryKey];
     const turnName = state.players[state.turn];
     const isFirstBid = state.bid === 0;
-    const maxReached = state.bid >= poolSize();
+    const maxReached = state.bid >= HARD_MAX_BID;
 
     let actionsHtml = '';
     if(isFirstBid){
       actionsHtml = `
         <div class="mgame-actions">
-          <input type="number" id="mg-bid-input" min="1" max="${poolSize()}" placeholder="N°">
+          <input type="number" id="mg-bid-input" min="1" max="${HARD_MAX_BID}" placeholder="N°">
           <button type="button" class="btn btn-solid" id="mg-bid-submit">Apostar</button>
         </div>`;
     } else if(maxReached){
       actionsHtml = `
-        <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px;">Se llegó al máximo de ${poolSize()} respuestas posibles. Ya no se puede subir más.</p>
         <div class="mgame-actions">
           <button type="button" class="btn btn-danger" id="mg-challenge">¡Mentiroso!</button>
         </div>`;
     } else {
       actionsHtml = `
         <div class="mgame-actions">
-          <input type="number" id="mg-bid-input" min="${state.bid + 1}" max="${poolSize()}" placeholder="N°">
+          <input type="number" id="mg-bid-input" min="${state.bid + 1}" max="${HARD_MAX_BID}" placeholder="N°">
           <button type="button" class="btn btn-solid" id="mg-bid-submit">Subir apuesta</button>
           <button type="button" class="btn btn-danger" id="mg-challenge">¡Mentiroso!</button>
         </div>`;
@@ -1402,8 +1563,8 @@
         const errEl = el.querySelector('#mg-bid-error');
         const val = parseInt(input.value, 10);
         const min = isFirstBid ? 1 : state.bid + 1;
-        if(isNaN(val) || val < min || val > poolSize()){
-          errEl.textContent = `Ingresá un número entre ${min} y ${poolSize()}.`;
+        if(isNaN(val) || val < min || val > HARD_MAX_BID){
+          errEl.textContent = `Ingresá un número entre ${min} y ${HARD_MAX_BID}.`;
           return;
         }
         state.bid = val;
@@ -1486,37 +1647,78 @@
     input.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
   }
 
-  function handleAnswer(raw){
+  let checkInFlight = false;
+
+  function setChallengeBusy(busy){
+    const inputEl = document.getElementById('mg-answer');
+    const btnEl = document.getElementById('mg-answer-submit');
+    const feedback = document.getElementById('mg-feedback');
+    if(inputEl) inputEl.disabled = busy;
+    if(btnEl) btnEl.disabled = busy;
+    if(feedback){
+      feedback.textContent = busy ? 'Revisando con la IA...' : '';
+      feedback.className = 'mgame-feedback' + (busy ? '' : '');
+    }
+  }
+
+  async function handleAnswer(raw){
+    if(checkInFlight) return;
     const cat = CATEGORIES[state.categoryKey];
     const norm = normalize(raw);
     const feedback = document.getElementById('mg-feedback');
 
-    let foundIdx = -1;
-    for(let i = 0; i < cat.items.length; i++){
-      if(state.usedIdx.has(i)) continue;
-      const item = cat.items[i];
-      if(item.aliases.some(a => normalize(a) === norm)){
-        foundIdx = i;
-        break;
-      }
-    }
+    checkInFlight = true;
+    setChallengeBusy(true);
 
-    if(foundIdx === -1){
-      // check if it's a valid answer but already used (duplicate)
-      const isKnownButUsed = cat.items.some((item, i) => state.usedIdx.has(i) && item.aliases.some(a => normalize(a) === norm));
-      if(isKnownButUsed){
-        pause();
-        finishChallenge(false, 'duplicado', raw);
-      } else {
-        pause();
-        finishChallenge(false, 'invalido', raw);
+    let data;
+    try{
+      const res = await fetch('/api/asistente/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: raw, categoryKey: state.categoryKey })
+      });
+      data = await res.json().catch(() => ({}));
+      if(!res.ok || !data.ok){
+        checkInFlight = false;
+        setChallengeBusy(false);
+        if(feedback){
+          feedback.textContent = data.error || 'No se pudo verificar con la IA, probá de nuevo.';
+          feedback.className = 'mgame-feedback err';
+        }
+        return;
+      }
+    }catch(e){
+      checkInFlight = false;
+      setChallengeBusy(false);
+      if(feedback){
+        feedback.textContent = 'No me pude conectar con el servidor. Probá de nuevo.';
+        feedback.className = 'mgame-feedback err';
       }
       return;
     }
 
-    state.usedIdx.add(foundIdx);
-    state.answersGiven.push(cat.items[foundIdx].display);
-    if(feedback){ feedback.textContent = ''; feedback.className = 'mgame-feedback'; }
+    checkInFlight = false;
+
+    // el desafío pudo haber terminado (se acabó el tiempo) mientras la IA revisaba
+    if(state.screen !== 'challenge'){ return; }
+
+    if(!data.valid || !data.matches || !data.matches.length){
+      pause();
+      finishChallenge(false, 'invalido', raw);
+      return;
+    }
+
+    const display = data.matches[0].display;
+    const canonicalNorm = normalize(display);
+    const alreadyGiven = state.answersGiven.some(a => normalize(a) === canonicalNorm);
+    if(alreadyGiven){
+      pause();
+      finishChallenge(false, 'duplicado', raw);
+      return;
+    }
+
+    state.answersGiven.push(display);
+    setChallengeBusy(false);
 
     if(state.answersGiven.length >= state.bid){
       pause();
@@ -1548,6 +1750,7 @@
     const cat = CATEGORIES[state.categoryKey];
     const bidderName = state.players[state.bidder];
     const challengerName = state.players[state.bidder === 0 ? 1 : 0];
+    const realMax = cat.items.length;
     let winnerName, desc;
 
     if(state.lastSuccess){
@@ -1560,7 +1763,10 @@
       } else if(state.failReason === 'duplicado'){
         desc = `${esc(bidderName)} repitió una respuesta: <span class="missing">"${esc(state.lastBadAnswer)}"</span> ya la había dicho.`;
       } else {
-        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(state.lastBadAnswer)}"</span> no está en la lista.`;
+        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(state.lastBadAnswer)}"</span> no es una respuesta correcta para esa categoría.`;
+      }
+      if(state.bid > realMax){
+        desc += `<br><span class="joke-note">😄 Dato de color: no existen ${state.bid} ${esc(cat.short)}, como mucho hay ${realMax}.</span>`;
       }
     }
 
@@ -1620,6 +1826,22 @@
     socket.on('mentiroso:peer-left', () => {
       online.error = 'El otro jugador se desconectó de la sala.';
       if(state.mode === 'online') render();
+    });
+    socket.on('mentiroso:checking', () => {
+      const feedback = document.getElementById('mg-online-feedback');
+      const inputEl = document.getElementById('mg-online-answer');
+      const btnEl = document.getElementById('mg-online-answer-submit');
+      if(feedback){ feedback.textContent = 'Revisando con la IA...'; feedback.className = 'mgame-feedback'; }
+      if(inputEl) inputEl.disabled = true;
+      if(btnEl) btnEl.disabled = true;
+    });
+    socket.on('mentiroso:answer-error', ({ message }) => {
+      const feedback = document.getElementById('mg-online-feedback');
+      const inputEl = document.getElementById('mg-online-answer');
+      const btnEl = document.getElementById('mg-online-answer-submit');
+      if(feedback){ feedback.textContent = message || 'No se pudo verificar, probá de nuevo.'; feedback.className = 'mgame-feedback err'; }
+      if(inputEl){ inputEl.disabled = false; inputEl.focus(); }
+      if(btnEl) btnEl.disabled = false;
     });
     socket.on('disconnect', () => {
       online.error = 'Se perdió la conexión con el servidor. Reconectando...';
@@ -1782,7 +2004,6 @@
         ${cats.map(c => `<div class="cat-card ${online.pendingCategory === c.key ? 'selected' : ''}" data-cat="${c.key}">
           <h4>${esc(c.label)}</h4>
           <p>${esc(c.hint)}</p>
-          <span class="count">${c.count} respuestas posibles</span>
         </div>`).join('')}
       </div>
       <div class="mgame-error" id="mg-online-setup-error"></div>
@@ -1819,21 +2040,20 @@
 
   function renderOnlineBid(el, s){
     const isFirstBid = s.bid === 0;
-    const maxReached = s.bid >= s.category.count;
+    const maxReached = s.bid >= HARD_MAX_BID;
     const myTurn = s.turn === online.myIndex;
     let actionsHtml = '';
     if(myTurn){
       if(isFirstBid){
         actionsHtml = `<div class="mgame-actions">
-          <input type="number" id="mg-online-bid-input" min="1" max="${s.category.count}" placeholder="N°">
+          <input type="number" id="mg-online-bid-input" min="1" max="${HARD_MAX_BID}" placeholder="N°">
           <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Apostar</button>
         </div>`;
       } else if(maxReached){
-        actionsHtml = `<p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px;">Se llegó al máximo de ${s.category.count} respuestas posibles. Ya no se puede subir más.</p>
-        <div class="mgame-actions"><button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button></div>`;
+        actionsHtml = `<div class="mgame-actions"><button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button></div>`;
       } else {
         actionsHtml = `<div class="mgame-actions">
-          <input type="number" id="mg-online-bid-input" min="${s.bid + 1}" max="${s.category.count}" placeholder="N°">
+          <input type="number" id="mg-online-bid-input" min="${s.bid + 1}" max="${HARD_MAX_BID}" placeholder="N°">
           <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Subir apuesta</button>
           <button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button>
         </div>`;
@@ -1865,8 +2085,8 @@
         const input = el.querySelector('#mg-online-bid-input');
         const val = parseInt(input.value, 10);
         const min = isFirstBid ? 1 : s.bid + 1;
-        if(isNaN(val) || val < min || val > s.category.count){
-          el.querySelector('#mg-online-bid-error').textContent = `Ingresá un número entre ${min} y ${s.category.count}.`;
+        if(isNaN(val) || val < min || val > HARD_MAX_BID){
+          el.querySelector('#mg-online-bid-error').textContent = `Ingresá un número entre ${min} y ${HARD_MAX_BID}.`;
           return;
         }
         socket.emit('mentiroso:bid', { value: val });
@@ -1892,6 +2112,7 @@
         <div class="mgame-progress"><span>${s.answersGiven.length}</span> / ${s.bid}</div>
         <div class="mgame-timer ${s.timeLeft <= 10 ? 'low' : ''}" id="mg-online-timer">${s.timeLeft}s</div>
       </div>
+      <div class="mgame-feedback" id="mg-online-feedback"></div>
       ${isMe ? `<div class="mgame-answer-input">
         <input type="text" id="mg-online-answer" placeholder="Escribí un nombre y Enter..." autocomplete="off">
         <button type="button" class="btn btn-solid" id="mg-online-answer-submit">Enviar</button>
@@ -1929,7 +2150,10 @@
       } else if(s.failReason === 'duplicado'){
         desc = `${esc(bidderName)} repitió una respuesta: <span class="missing">"${esc(s.lastBadAnswer)}"</span> ya la había dicho.`;
       } else {
-        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(s.lastBadAnswer)}"</span> no está en la lista.`;
+        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(s.lastBadAnswer)}"</span> no es una respuesta correcta para esa categoría.`;
+      }
+      if(s.bid > s.category.count){
+        desc += `<br><span class="joke-note">😄 Dato de color: no existen ${s.bid} ${esc(s.category.short)}, como mucho hay ${s.category.count}.</span>`;
       }
     }
     const isHost = online.myIndex === 0;
