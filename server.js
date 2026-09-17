@@ -1,18 +1,11 @@
-<<<<<<< HEAD
 require('dotenv').config();
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-<<<<<<< HEAD
 const { CATEGORIES, normalize, referenceNames } = require('./gameData');
-=======
-const { CATEGORIES, normalize } = require('./gameData');
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 
 const app = express();
 const server = http.createServer(app);
@@ -28,7 +21,6 @@ if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
 
-<<<<<<< HEAD
 // ==================== IA (Anthropic Claude) ====================
 // Necesita la variable de entorno ANTHROPIC_API_KEY. Conseguí una clave en
 // https://console.anthropic.com/ y ponela en un archivo .env (mirá .env.example)
@@ -168,8 +160,6 @@ async function verifyAnswerAllCategories(query) {
     }));
 }
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 // ==================== REGISTRO ====================
 function readUsers() {
   try {
@@ -226,13 +216,7 @@ app.get('/api/miembros', (req, res) => {
   res.json({ members: users.map(u => u.username) });
 });
 
-<<<<<<< HEAD
 // ==================== ASISTENTE (IA de davismo) ====================
-=======
-// ==================== MENTIROSO ONLINE ====================
-const rooms = new Map(); // code -> room
-
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 function categoriesMeta() {
   return Object.keys(CATEGORIES).map(key => {
     const c = CATEGORIES[key];
@@ -240,7 +224,6 @@ function categoriesMeta() {
   });
 }
 
-<<<<<<< HEAD
 app.get('/api/categorias', (req, res) => {
   res.json({ categories: categoriesMeta() });
 });
@@ -338,8 +321,6 @@ const rooms = new Map(); // code -> room
 // si te pasás, el tiempo te termina ganando la partida).
 const HARD_MAX_BID = 999;
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 function genCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code;
@@ -380,12 +361,8 @@ function publicState(room) {
     failReason: room.failReason,
     lastBadAnswer: room.lastBadAnswer,
     lastSuccess: room.lastSuccess,
-<<<<<<< HEAD
     roundsPlayed: room.roundsPlayed,
     pendingCheck: !!room.pendingCheck
-=======
-    roundsPlayed: room.roundsPlayed
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   };
 }
 
@@ -404,16 +381,10 @@ function startRound(room) {
   room.turn = room.starter;
   room.bid = 0;
   room.bidder = null;
-<<<<<<< HEAD
   room.acceptedNormalized = [];
   room.answersGiven = [];
   room.failReason = '';
   room.pendingCheck = false;
-=======
-  room.usedIdx = new Set();
-  room.answersGiven = [];
-  room.failReason = '';
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   room.screen = 'bid';
   broadcast(room);
 }
@@ -422,14 +393,9 @@ function startChallenge(room) {
   room.screen = 'challenge';
   room.timeLeft = room.timeLimit;
   room.answersGiven = [];
-<<<<<<< HEAD
   room.acceptedNormalized = [];
   room.failReason = '';
   room.pendingCheck = false;
-=======
-  room.usedIdx = new Set();
-  room.failReason = '';
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   stopTimer(room);
   broadcast(room);
   room.timerId = setInterval(() => {
@@ -454,10 +420,7 @@ function finishChallenge(room, success, reason, badAnswer) {
   room.failReason = reason || '';
   room.lastBadAnswer = badAnswer || '';
   room.lastSuccess = success;
-<<<<<<< HEAD
   room.pendingCheck = false;
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   room.screen = 'result';
   room.starter = room.starter === 0 ? 1 : 0;
   broadcast(room);
@@ -484,18 +447,11 @@ io.on('connection', socket => {
       turn: 0,
       bid: 0,
       bidder: null,
-<<<<<<< HEAD
       acceptedNormalized: [],
       answersGiven: [],
       timeLeft: 0,
       timerId: null,
       pendingCheck: false,
-=======
-      usedIdx: new Set(),
-      answersGiven: [],
-      timeLeft: 0,
-      timerId: null,
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
       scores: [0, 0],
       failReason: '',
       lastBadAnswer: '',
@@ -559,11 +515,7 @@ io.on('connection', socket => {
     if (socket.data.playerIndex !== room.turn) return;
     const isFirstBid = room.bid === 0;
     const min = isFirstBid ? 1 : room.bid + 1;
-<<<<<<< HEAD
     const max = HARD_MAX_BID; // tope técnico, no el máximo real de la categoría a propósito
-=======
-    const max = poolSize(room);
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
     const val = parseInt(payload && payload.value, 10);
     if (isNaN(val) || val < min || val > max) return;
     room.bid = val;
@@ -580,7 +532,6 @@ io.on('connection', socket => {
     startChallenge(room);
   });
 
-<<<<<<< HEAD
   // La verificación de cada respuesta se hace con IA (async), por eso este
   // handler es async y avisa "pendingCheck" mientras espera la respuesta
   // del modelo, para que el cliente pueda mostrar "revisando...".
@@ -643,40 +594,6 @@ io.on('connection', socket => {
     }
 
     broadcast(freshRoom);
-=======
-  socket.on('mentiroso:answer', payload => {
-    const room = getRoom();
-    if (!room || room.screen !== 'challenge') return;
-    if (socket.data.playerIndex !== room.bidder) return;
-    const raw = ((payload && payload.text) || '').toString();
-    if (!raw.trim()) return;
-    const cat = CATEGORIES[room.categoryKey];
-    const norm = normalize(raw);
-    let foundIdx = -1;
-    for (let i = 0; i < cat.items.length; i++) {
-      if (room.usedIdx.has(i)) continue;
-      if (cat.items[i].aliases.some(a => normalize(a) === norm)) {
-        foundIdx = i;
-        break;
-      }
-    }
-    if (foundIdx === -1) {
-      const isKnownButUsed = cat.items.some(
-        (item, i) => room.usedIdx.has(i) && item.aliases.some(a => normalize(a) === norm)
-      );
-      stopTimer(room);
-      finishChallenge(room, false, isKnownButUsed ? 'duplicado' : 'invalido', raw);
-      return;
-    }
-    room.usedIdx.add(foundIdx);
-    room.answersGiven.push(cat.items[foundIdx].display);
-    if (room.answersGiven.length >= room.bid) {
-      stopTimer(room);
-      finishChallenge(room, true);
-      return;
-    }
-    broadcast(room);
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   });
 
   socket.on('mentiroso:nextRound', () => {
@@ -718,13 +635,10 @@ io.on('connection', socket => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log('davismo corriendo en http://localhost:' + PORT);
-<<<<<<< HEAD
   if (!aiAvailable()) {
     console.warn(
       '⚠️  ANTHROPIC_API_KEY no está configurada: el Asistente de IA y la verificación ' +
         'de respuestas del Mentiroso no van a funcionar hasta que la definas (ver .env.example).'
     );
   }
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 });

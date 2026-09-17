@@ -133,8 +133,10 @@ function normalize(str){
     .trim();
 }
 
-
-
+// Lista de nombres de referencia (solo como contexto/ejemplos para la IA,
+// YA NO se usa para validar de forma estricta: la IA puede aceptar
+// respuestas correctas que no estén en esta lista, y las respuestas de
+// esta lista siguen sirviendo como ejemplos para que no invente cosas).
 function referenceNames(key){
   const cat = CATEGORIES[key];
   if(!cat) return [];
@@ -142,5 +144,3 @@ function referenceNames(key){
 }
 
 module.exports = { CATEGORIES, normalize, referenceNames };
-module.exports = { CATEGORIES, normalize };
-
