@@ -2,24 +2,16 @@
   "name": "davismo",
   "version": "1.0.0",
   "private": true,
-<<<<<<< HEAD
   "description": "Sitio davismo con registro real, Mentiroso multijugador online y verificación de respuestas por IA",
-=======
-  "description": "Sitio davismo con registro real y Mentiroso multijugador online",
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-<<<<<<< HEAD
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-=======
-  "dependencies": {
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
     "express": "^4.19.2",
     "socket.io": "^4.7.5"
   }
