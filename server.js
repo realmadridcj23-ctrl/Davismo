@@ -26,7 +26,7 @@ app.use(express.static(PUBLIC_DIR));
 // https://aistudio.google.com/ (botón "Get API Key") y ponela en un archivo .env
 // (mirá .env.example) o como variable de entorno de tu hosting.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 
 function aiAvailable() {
   return !!GEMINI_API_KEY;
@@ -298,7 +298,9 @@ app.post('/api/asistente/chat', async (req, res) => {
 
   const system =
     'Sos el Asistente de IA de davismo, la comunidad y el sitio de fútbol de "davismo". ' +
-    'Hablás en español rioplatense, con onda, cercano, pero sin exagerar el voseo ni ser payasesco. ' +
+    'Respondé en español neutro, formal y claro, sin modismos regionales ni jerga de ningún país ' +
+    '(nada de voseo marcado, "che", "boludo", etc.), salvo que el usuario te pida explícitamente ' +
+    'adoptar otro tono o dialecto. ' +
     'Podés responder cualquier pregunta (de fútbol, del sitio, o de cualquier otro tema en general), ' +
     'ayudar a explicar cómo se juega el "Mentiroso Futbolero" (el juego de la casa: se apuesta cuántos ' +
     'nombres se pueden decir de una categoría futbolera, y si te cantan "mentiroso" tenés que nombrarlos ' +
