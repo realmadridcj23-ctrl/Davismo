@@ -21,49 +21,59 @@ if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
 
-// ==================== IA (Anthropic Claude) ====================
-// Necesita la variable de entorno ANTHROPIC_API_KEY. Conseguí una clave en
-// https://console.anthropic.com/ y ponela en un archivo .env (mirá .env.example)
-// o como variable de entorno de tu hosting.
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
+// ==================== IA (Google Gemini) ====================
+// Necesita la variable de entorno GEMINI_API_KEY. Conseguí una clave GRATIS en
+// https://aistudio.google.com/ (botón "Get API Key") y ponela en un archivo .env
+// (mirá .env.example) o como variable de entorno de tu hosting.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 
 function aiAvailable() {
-  return !!ANTHROPIC_API_KEY;
+  return !!GEMINI_API_KEY;
 }
 
 async function callClaude({ system, messages, maxTokens }) {
   if (!aiAvailable()) {
-    const err = new Error('ANTHROPIC_API_KEY no configurada');
+    const err = new Error('GEMINI_API_KEY no configurada');
     err.code = 'NO_API_KEY';
     throw err;
   }
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+
+  // Gemini no tiene un rol "system" separado como Anthropic: lo mandamos
+  // como una instrucción aparte (systemInstruction) y convertimos los
+  // mensajes de "user"/"assistant" al formato de Gemini ("user"/"model").
+  const contents = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  const url =
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+    GEMINI_MODEL +
+    ':generateContent?key=' +
+    GEMINI_API_KEY;
+
+  const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: maxTokens || 400,
-      system,
-      messages
+      systemInstruction: { parts: [{ text: system }] },
+      contents,
+      generationConfig: { maxOutputTokens: maxTokens || 400 }
     })
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    const err = new Error('Anthropic API error ' + res.status + ': ' + text);
+    const err = new Error('Gemini API error ' + res.status + ': ' + text);
     err.code = 'API_ERROR';
     throw err;
   }
 
   const data = await res.json();
-  const text = (data.content || [])
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
+  const text = (data.candidates || [])
+    .flatMap(c => (c.content && c.content.parts) || [])
+    .map(p => p.text || '')
     .join('\n')
     .trim();
   return text;
@@ -637,7 +647,7 @@ server.listen(PORT, () => {
   console.log('davismo corriendo en http://localhost:' + PORT);
   if (!aiAvailable()) {
     console.warn(
-      '⚠️  ANTHROPIC_API_KEY no está configurada: el Asistente de IA y la verificación ' +
+      '⚠️  GEMINI_API_KEY no está configurada: el Asistente de IA y la verificación ' +
         'de respuestas del Mentiroso no van a funcionar hasta que la definas (ver .env.example).'
     );
   }
