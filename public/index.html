@@ -350,7 +350,6 @@
   }
   #members-empty{ color: var(--text-muted); font-size: 13px; }
 
-<<<<<<< HEAD
   /* ---------- ASISTENTE (IA de davismo) ---------- */
   .assistant-head{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
   .assistant-avatar{
@@ -393,8 +392,6 @@
   }
   .assistant-input-row input:focus-visible{ border-color: var(--green-signal); }
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   /* ---------- MENTIROSO FUTBOLERO ---------- */
   .overlay-panel.wide{ max-width: 760px; }
 
@@ -460,10 +457,7 @@
   .mgame-result{ text-align:center; }
   .mgame-result .winner{ font-family:'Chakra Petch',sans-serif; font-size:30px; font-weight:700; color: var(--green-signal); margin-bottom:10px; }
   .mgame-result .desc{ color: var(--text-muted); font-size:14px; margin-bottom:22px; line-height:1.6; }
-<<<<<<< HEAD
   .joke-note{ display:inline-block; margin-top:8px; color: var(--green-signal); font-size:13px; }
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   .mgame-result .missing{ color: #ff8a7a; }
   .mgame-score{ display:flex; justify-content:center; gap:28px; margin-bottom:26px; }
   .mgame-score div{ text-align:center; }
@@ -494,7 +488,6 @@
     transform: translateX(-50%) translateY(0);
   }
 
-<<<<<<< HEAD
   /* ---------- ASISTENTE FLOTANTE ---------- */
   .assistant-fab-wrap{
     position: fixed;
@@ -552,8 +545,6 @@
     .assistant-fab-bubble{ font-size: 12.5px; max-width: 62vw; white-space: normal; text-align: right; }
   }
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   /* ---------- MENTIROSO ONLINE ---------- */
   .mgame-mode-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:14px; margin-bottom: 6px; }
   .mgame-mode-card{ background: var(--bg-void); border:1px solid var(--line); border-radius:10px; padding:22px; cursor:pointer; transition: border-color .15s ease, background .15s ease; text-align:left; }
@@ -594,10 +585,7 @@
     <a href="#" class="logo">davis<span>mo</span></a>
     <ul class="nav-links">
       <li><button type="button" data-open="juegos">Juegos</button></li>
-<<<<<<< HEAD
       <li><button type="button" data-open="asistente">Asistente</button></li>
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
       <li><button type="button" data-open="discord">Discord</button></li>
       <li><button type="button" data-open="registro">Registro</button></li>
     </ul>
@@ -605,16 +593,10 @@
 
   <div class="hero-content">
     <h1>davismo</h1>
-<<<<<<< HEAD
-    <p>Bienvenido a la página oficial del Davismo: un espacio para informarte, ganar experiencia y divertirte jugando. Explora, comparte tu pasión y únete al Discord.</p>
-    <div class="hero-actions">
-      <button type="button" class="btn btn-solid" data-open="juegos">Ver juegos</button>
-      <button type="button" class="btn btn-outline" data-open="asistente">Preguntarle a la IA</button>
-=======
     <p>Un espacio para jugar, seguir novedades y estar conectado con la comunidad. Explora los juegos y únete al servidor de Discord.</p>
     <div class="hero-actions">
       <button type="button" class="btn btn-solid" data-open="juegos">Ver juegos</button>
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
+      <button type="button" class="btn btn-outline" data-open="asistente">Preguntarle a la IA</button>
       <button type="button" class="btn btn-outline" data-open="registro">Registrarme</button>
     </div>
   </div>
@@ -660,7 +642,6 @@
 <!-- ---------- TOAST ---------- -->
 <div class="toast" id="toast" aria-live="polite"></div>
 
-<<<<<<< HEAD
 <!-- ---------- ASISTENTE FLOTANTE (visible al entrar a la página) ---------- -->
 <div class="assistant-fab-wrap" id="assistant-fab-wrap">
   <div class="assistant-fab-bubble" id="assistant-fab-bubble">¡Preguntame lo que quieras! 👋</div>
@@ -669,8 +650,6 @@
   </button>
 </div>
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 <!-- ---------- DISCORD OVERLAY ---------- -->
 <div class="overlay" id="overlay-discord" aria-hidden="true">
   <div class="overlay-panel">
@@ -718,7 +697,6 @@
   </div>
 </div>
 
-<<<<<<< HEAD
 <!-- ---------- ASISTENTE (IA de davismo) OVERLAY ---------- -->
 <div class="overlay" id="overlay-asistente" aria-hidden="true">
   <div class="overlay-panel wide">
@@ -754,8 +732,6 @@
   </div>
 </div>
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 <!-- ---------- MENTIROSO FUTBOLERO OVERLAY ---------- -->
 <div class="overlay" id="overlay-mentiroso" aria-hidden="true">
   <div class="overlay-panel wide">
@@ -868,12 +844,8 @@
     juegos: document.getElementById('overlay-juegos'),
     discord: document.getElementById('overlay-discord'),
     registro: document.getElementById('overlay-registro'),
-<<<<<<< HEAD
     mentiroso: document.getElementById('overlay-mentiroso'),
     asistente: document.getElementById('overlay-asistente')
-=======
-    mentiroso: document.getElementById('overlay-mentiroso')
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   };
 
   function openOverlay(name){
@@ -882,10 +854,7 @@
     el.classList.add('open');
     el.setAttribute('aria-hidden', 'false');
     if(name === 'mentiroso' && window.MentirosoGame){ window.MentirosoGame.render(); }
-<<<<<<< HEAD
     if(name === 'asistente' && window.DavismoAsistente){ window.DavismoAsistente.onOpen(); }
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   }
   function closeOverlay(el){
     el.classList.remove('open');
@@ -923,7 +892,6 @@
   });
 })();
 
-<<<<<<< HEAD
 // ---------------- Globito de saludo del Asistente flotante ----------------
 (function(){
   const bubble = document.getElementById('assistant-fab-bubble');
@@ -942,8 +910,6 @@
   fab.addEventListener('click', () => { bubble.classList.remove('show'); clearTimeout(hideTimer); });
 })();
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 // ---------------- Registration (backend real, sin window.storage) ----------------
 (function(){
   const form = document.getElementById('registro-form');
@@ -1041,7 +1007,6 @@
 </script>
 
 <script>
-<<<<<<< HEAD
 // ---------------- Asistente (IA de davismo) ----------------
 (function(){
   const chatEl = document.getElementById('assistant-chat');
@@ -1218,8 +1183,6 @@
 </script>
 
 <script>
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 // ---------------- Mentiroso Futbolero ----------------
 (function(){
 
@@ -1462,10 +1425,6 @@
             return `<div class="cat-card ${sel}" data-cat="${k}">
               <h4>${esc(c.label)}</h4>
               <p>${esc(c.hint)}</p>
-<<<<<<< HEAD
-=======
-              <span class="count">${c.items.length} respuestas posibles</span>
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
             </div>`;
           }).join('')}
         </div>
@@ -1542,53 +1501,34 @@
     return CATEGORIES[state.categoryKey].items.length;
   }
 
-<<<<<<< HEAD
   // Tope técnico solo para evitar números absurdos en el input (no tiene
   // que ver con cuántas respuestas existen de verdad: se puede apostar por
   // encima del máximo real de la categoría a propósito, como en el juego
   // de mesa. Si te excedés, el tiempo te va a terminar ganando la partida.
   const HARD_MAX_BID = 999;
 
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
   function renderBid(el){
     const cat = CATEGORIES[state.categoryKey];
     const turnName = state.players[state.turn];
     const isFirstBid = state.bid === 0;
-<<<<<<< HEAD
     const maxReached = state.bid >= HARD_MAX_BID;
-=======
-    const maxReached = state.bid >= poolSize();
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 
     let actionsHtml = '';
     if(isFirstBid){
       actionsHtml = `
         <div class="mgame-actions">
-<<<<<<< HEAD
           <input type="number" id="mg-bid-input" min="1" max="${HARD_MAX_BID}" placeholder="N°">
-=======
-          <input type="number" id="mg-bid-input" min="1" max="${poolSize()}" placeholder="N°">
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
           <button type="button" class="btn btn-solid" id="mg-bid-submit">Apostar</button>
         </div>`;
     } else if(maxReached){
       actionsHtml = `
-<<<<<<< HEAD
-=======
-        <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px;">Se llegó al máximo de ${poolSize()} respuestas posibles. Ya no se puede subir más.</p>
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
         <div class="mgame-actions">
           <button type="button" class="btn btn-danger" id="mg-challenge">¡Mentiroso!</button>
         </div>`;
     } else {
       actionsHtml = `
         <div class="mgame-actions">
-<<<<<<< HEAD
           <input type="number" id="mg-bid-input" min="${state.bid + 1}" max="${HARD_MAX_BID}" placeholder="N°">
-=======
-          <input type="number" id="mg-bid-input" min="${state.bid + 1}" max="${poolSize()}" placeholder="N°">
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
           <button type="button" class="btn btn-solid" id="mg-bid-submit">Subir apuesta</button>
           <button type="button" class="btn btn-danger" id="mg-challenge">¡Mentiroso!</button>
         </div>`;
@@ -1623,13 +1563,8 @@
         const errEl = el.querySelector('#mg-bid-error');
         const val = parseInt(input.value, 10);
         const min = isFirstBid ? 1 : state.bid + 1;
-<<<<<<< HEAD
         if(isNaN(val) || val < min || val > HARD_MAX_BID){
           errEl.textContent = `Ingresá un número entre ${min} y ${HARD_MAX_BID}.`;
-=======
-        if(isNaN(val) || val < min || val > poolSize()){
-          errEl.textContent = `Ingresá un número entre ${min} y ${poolSize()}.`;
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
           return;
         }
         state.bid = val;
@@ -1712,7 +1647,6 @@
     input.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
   }
 
-<<<<<<< HEAD
   let checkInFlight = false;
 
   function setChallengeBusy(busy){
@@ -1729,14 +1663,10 @@
 
   async function handleAnswer(raw){
     if(checkInFlight) return;
-=======
-  function handleAnswer(raw){
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
     const cat = CATEGORIES[state.categoryKey];
     const norm = normalize(raw);
     const feedback = document.getElementById('mg-feedback');
 
-<<<<<<< HEAD
     checkInFlight = true;
     setChallengeBusy(true);
 
@@ -1763,32 +1693,10 @@
       if(feedback){
         feedback.textContent = 'No me pude conectar con el servidor. Probá de nuevo.';
         feedback.className = 'mgame-feedback err';
-=======
-    let foundIdx = -1;
-    for(let i = 0; i < cat.items.length; i++){
-      if(state.usedIdx.has(i)) continue;
-      const item = cat.items[i];
-      if(item.aliases.some(a => normalize(a) === norm)){
-        foundIdx = i;
-        break;
-      }
-    }
-
-    if(foundIdx === -1){
-      // check if it's a valid answer but already used (duplicate)
-      const isKnownButUsed = cat.items.some((item, i) => state.usedIdx.has(i) && item.aliases.some(a => normalize(a) === norm));
-      if(isKnownButUsed){
-        pause();
-        finishChallenge(false, 'duplicado', raw);
-      } else {
-        pause();
-        finishChallenge(false, 'invalido', raw);
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
       }
       return;
     }
 
-<<<<<<< HEAD
     checkInFlight = false;
 
     // el desafío pudo haber terminado (se acabó el tiempo) mientras la IA revisaba
@@ -1811,11 +1719,6 @@
 
     state.answersGiven.push(display);
     setChallengeBusy(false);
-=======
-    state.usedIdx.add(foundIdx);
-    state.answersGiven.push(cat.items[foundIdx].display);
-    if(feedback){ feedback.textContent = ''; feedback.className = 'mgame-feedback'; }
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
 
     if(state.answersGiven.length >= state.bid){
       pause();
@@ -1847,10 +1750,7 @@
     const cat = CATEGORIES[state.categoryKey];
     const bidderName = state.players[state.bidder];
     const challengerName = state.players[state.bidder === 0 ? 1 : 0];
-<<<<<<< HEAD
     const realMax = cat.items.length;
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
     let winnerName, desc;
 
     if(state.lastSuccess){
@@ -1863,14 +1763,10 @@
       } else if(state.failReason === 'duplicado'){
         desc = `${esc(bidderName)} repitió una respuesta: <span class="missing">"${esc(state.lastBadAnswer)}"</span> ya la había dicho.`;
       } else {
-<<<<<<< HEAD
         desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(state.lastBadAnswer)}"</span> no es una respuesta correcta para esa categoría.`;
       }
       if(state.bid > realMax){
         desc += `<br><span class="joke-note">😄 Dato de color: no existen ${state.bid} ${esc(cat.short)}, como mucho hay ${realMax}.</span>`;
-=======
-        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(state.lastBadAnswer)}"</span> no está en la lista.`;
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
       }
     }
 
@@ -1931,7 +1827,6 @@
       online.error = 'El otro jugador se desconectó de la sala.';
       if(state.mode === 'online') render();
     });
-<<<<<<< HEAD
     socket.on('mentiroso:checking', () => {
       const feedback = document.getElementById('mg-online-feedback');
       const inputEl = document.getElementById('mg-online-answer');
@@ -1948,8 +1843,6 @@
       if(inputEl){ inputEl.disabled = false; inputEl.focus(); }
       if(btnEl) btnEl.disabled = false;
     });
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
     socket.on('disconnect', () => {
       online.error = 'Se perdió la conexión con el servidor. Reconectando...';
       if(state.mode === 'online') render();
@@ -2111,10 +2004,6 @@
         ${cats.map(c => `<div class="cat-card ${online.pendingCategory === c.key ? 'selected' : ''}" data-cat="${c.key}">
           <h4>${esc(c.label)}</h4>
           <p>${esc(c.hint)}</p>
-<<<<<<< HEAD
-=======
-          <span class="count">${c.count} respuestas posibles</span>
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
         </div>`).join('')}
       </div>
       <div class="mgame-error" id="mg-online-setup-error"></div>
@@ -2151,17 +2040,12 @@
 
   function renderOnlineBid(el, s){
     const isFirstBid = s.bid === 0;
-<<<<<<< HEAD
     const maxReached = s.bid >= HARD_MAX_BID;
-=======
-    const maxReached = s.bid >= s.category.count;
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
     const myTurn = s.turn === online.myIndex;
     let actionsHtml = '';
     if(myTurn){
       if(isFirstBid){
         actionsHtml = `<div class="mgame-actions">
-<<<<<<< HEAD
           <input type="number" id="mg-online-bid-input" min="1" max="${HARD_MAX_BID}" placeholder="N°">
           <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Apostar</button>
         </div>`;
@@ -2170,17 +2054,6 @@
       } else {
         actionsHtml = `<div class="mgame-actions">
           <input type="number" id="mg-online-bid-input" min="${s.bid + 1}" max="${HARD_MAX_BID}" placeholder="N°">
-=======
-          <input type="number" id="mg-online-bid-input" min="1" max="${s.category.count}" placeholder="N°">
-          <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Apostar</button>
-        </div>`;
-      } else if(maxReached){
-        actionsHtml = `<p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px;">Se llegó al máximo de ${s.category.count} respuestas posibles. Ya no se puede subir más.</p>
-        <div class="mgame-actions"><button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button></div>`;
-      } else {
-        actionsHtml = `<div class="mgame-actions">
-          <input type="number" id="mg-online-bid-input" min="${s.bid + 1}" max="${s.category.count}" placeholder="N°">
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
           <button type="button" class="btn btn-solid" id="mg-online-bid-submit">Subir apuesta</button>
           <button type="button" class="btn btn-danger" id="mg-online-challenge">¡Mentiroso!</button>
         </div>`;
@@ -2212,13 +2085,8 @@
         const input = el.querySelector('#mg-online-bid-input');
         const val = parseInt(input.value, 10);
         const min = isFirstBid ? 1 : s.bid + 1;
-<<<<<<< HEAD
         if(isNaN(val) || val < min || val > HARD_MAX_BID){
           el.querySelector('#mg-online-bid-error').textContent = `Ingresá un número entre ${min} y ${HARD_MAX_BID}.`;
-=======
-        if(isNaN(val) || val < min || val > s.category.count){
-          el.querySelector('#mg-online-bid-error').textContent = `Ingresá un número entre ${min} y ${s.category.count}.`;
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
           return;
         }
         socket.emit('mentiroso:bid', { value: val });
@@ -2244,10 +2112,7 @@
         <div class="mgame-progress"><span>${s.answersGiven.length}</span> / ${s.bid}</div>
         <div class="mgame-timer ${s.timeLeft <= 10 ? 'low' : ''}" id="mg-online-timer">${s.timeLeft}s</div>
       </div>
-<<<<<<< HEAD
       <div class="mgame-feedback" id="mg-online-feedback"></div>
-=======
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
       ${isMe ? `<div class="mgame-answer-input">
         <input type="text" id="mg-online-answer" placeholder="Escribí un nombre y Enter..." autocomplete="off">
         <button type="button" class="btn btn-solid" id="mg-online-answer-submit">Enviar</button>
@@ -2285,14 +2150,10 @@
       } else if(s.failReason === 'duplicado'){
         desc = `${esc(bidderName)} repitió una respuesta: <span class="missing">"${esc(s.lastBadAnswer)}"</span> ya la había dicho.`;
       } else {
-<<<<<<< HEAD
         desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(s.lastBadAnswer)}"</span> no es una respuesta correcta para esa categoría.`;
       }
       if(s.bid > s.category.count){
         desc += `<br><span class="joke-note">😄 Dato de color: no existen ${s.bid} ${esc(s.category.short)}, como mucho hay ${s.category.count}.</span>`;
-=======
-        desc = `${esc(bidderName)} dijo algo inválido: <span class="missing">"${esc(s.lastBadAnswer)}"</span> no está en la lista.`;
->>>>>>> 36a0ca5f9d7d8cc4c548aa78946ca83919888375
       }
     }
     const isHost = online.myIndex === 0;
