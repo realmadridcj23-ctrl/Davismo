@@ -464,6 +464,31 @@
   .mgame-score .n{ font-family:'Chakra Petch',sans-serif; font-size:26px; font-weight:700; }
   .mgame-score .l{ color: var(--text-muted); font-size:12px; }
 
+  /* ---- Trivia ---- */
+  .trivia-start{ text-align:center; }
+  .trivia-start p{ color: var(--text-muted); font-size:14px; margin-bottom:22px; line-height:1.6; }
+  .trivia-count-grid{ display:flex; gap:10px; justify-content:center; margin-bottom:24px; flex-wrap:wrap; }
+  .trivia-count-grid button{ background: var(--bg-void); border:1px solid var(--line); color: var(--text-primary); padding:12px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Chakra Petch',sans-serif; }
+  .trivia-count-grid button.selected, .trivia-count-grid button:hover{ border-color: var(--green-signal); color: var(--green-signal); }
+  .trivia-progress-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:12px; flex-wrap:wrap; }
+  .trivia-progress{ font-family:'Chakra Petch',sans-serif; font-size:16px; }
+  .trivia-progress span{ color: var(--green-signal); }
+  .trivia-score-live{ font-family:'Chakra Petch',sans-serif; font-size:16px; color: var(--text-muted); }
+  .trivia-question{ font-size:19px; font-weight:600; line-height:1.5; margin-bottom:22px; text-align:center; }
+  .trivia-options{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px; margin-bottom:18px; }
+  .trivia-option{ background: var(--bg-void); border:1px solid var(--line); border-radius:8px; padding:16px; cursor:pointer; text-align:left; font-size:14.5px; color: var(--text-primary); transition: border-color .15s ease, background .15s ease; font-family:'Inter',sans-serif; }
+  .trivia-option:hover:not(:disabled){ border-color: var(--green-deep); }
+  .trivia-option.correct{ border-color: var(--green-signal); background: rgba(82,255,134,0.1); color: var(--green-signal); }
+  .trivia-option.incorrect{ border-color: #7a3a32; background: rgba(255,138,122,0.1); color:#ff8a7a; }
+  .trivia-option:disabled{ cursor: default; opacity: 0.75; }
+  .trivia-next-row{ text-align:center; }
+  .trivia-result{ text-align:center; }
+  .trivia-result .big-score{ font-family:'Chakra Petch',sans-serif; font-size:52px; font-weight:700; color: var(--green-signal); margin-bottom:6px; }
+  .trivia-result .msg{ color: var(--text-muted); font-size:14.5px; margin-bottom:24px; }
+  @media (max-width: 640px){
+    .trivia-options{ grid-template-columns: 1fr; }
+  }
+
   /* ---------- TOAST ---------- */
   .toast{
     position: fixed;
@@ -624,10 +649,10 @@
         <button type="button" class="btn btn-outline" data-soon>Jugar</button>
       </div>
       <div class="game-card">
-        <span class="game-tag">Preguntas</span>
+        <span class="game-tag">Preguntas · Nivel Leyenda</span>
         <h3>Trivia</h3>
-        <p>Pon a prueba tus conocimientos.</p>
-        <button type="button" class="btn btn-outline" data-soon>Jugar</button>
+        <p>Preguntas de fútbol nivel leyenda, siempre al azar y distintas en cada partida.</p>
+        <button type="button" class="btn btn-outline" data-open="trivia">Jugar</button>
       </div>
       <div class="game-card">
         <span class="game-tag">Fiesta · Online</span>
@@ -744,6 +769,18 @@
   </div>
 </div>
 
+<!-- ---------- TRIVIA OVERLAY ---------- -->
+<div class="overlay" id="overlay-trivia" aria-hidden="true">
+  <div class="overlay-panel wide">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Trivia Nivel Leyenda</h2>
+      <p>Preguntas de fútbol difíciles, elegidas al azar entre un banco grande. Cada partida es distinta.</p>
+    </div>
+    <div id="trivia-root"></div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ---------------- Interactive green background ----------------
@@ -845,7 +882,8 @@
     discord: document.getElementById('overlay-discord'),
     registro: document.getElementById('overlay-registro'),
     mentiroso: document.getElementById('overlay-mentiroso'),
-    asistente: document.getElementById('overlay-asistente')
+    asistente: document.getElementById('overlay-asistente'),
+    trivia: document.getElementById('overlay-trivia')
   };
 
   function openOverlay(name){
@@ -855,6 +893,7 @@
     el.setAttribute('aria-hidden', 'false');
     if(name === 'mentiroso' && window.MentirosoGame){ window.MentirosoGame.render(); }
     if(name === 'asistente' && window.DavismoAsistente){ window.DavismoAsistente.onOpen(); }
+    if(name === 'trivia' && window.TriviaGame){ window.TriviaGame.render(); }
   }
   function closeOverlay(el){
     el.classList.remove('open');
@@ -1066,7 +1105,7 @@
         greetedVerificar = true;
       }
       addBubble(
-        'Escribime un nombre (jugador, selección o club, según la categoría) y te digo si es una respuesta válida para el Mentiroso. La reviso con IA, así que acepta apodos, apellidos solos o errores de tipeo menores.',
+        'Escribime un nombre (jugador, selección o club, según la categoría) y te digo si es una respuesta válida para el Mentiroso. La reviso contra la lista oficial de esa categoría, así que probá con el nombre completo o alguno de sus apodos conocidos.',
         'bot'
       );
     } else {
@@ -1084,7 +1123,7 @@
   async function checkQuery(query){
     const categoryKey = categorySelect.value;
     addBubble(escapeHtml(query), 'user');
-    const thinking = addBubble('Revisando con la IA...', 'bot', 'thinking');
+    const thinking = addBubble('Revisando...', 'bot', 'thinking');
 
     try{
       const res = await fetch('/api/asistente/verificar', {
@@ -1656,7 +1695,7 @@
     if(inputEl) inputEl.disabled = busy;
     if(btnEl) btnEl.disabled = busy;
     if(feedback){
-      feedback.textContent = busy ? 'Revisando con la IA...' : '';
+      feedback.textContent = busy ? 'Revisando...' : '';
       feedback.className = 'mgame-feedback' + (busy ? '' : '');
     }
   }
@@ -1682,7 +1721,7 @@
         checkInFlight = false;
         setChallengeBusy(false);
         if(feedback){
-          feedback.textContent = data.error || 'No se pudo verificar con la IA, probá de nuevo.';
+          feedback.textContent = data.error || 'No se pudo verificar, probá de nuevo.';
           feedback.className = 'mgame-feedback err';
         }
         return;
@@ -1831,7 +1870,7 @@
       const feedback = document.getElementById('mg-online-feedback');
       const inputEl = document.getElementById('mg-online-answer');
       const btnEl = document.getElementById('mg-online-answer-submit');
-      if(feedback){ feedback.textContent = 'Revisando con la IA...'; feedback.className = 'mgame-feedback'; }
+      if(feedback){ feedback.textContent = 'Revisando...'; feedback.className = 'mgame-feedback'; }
       if(inputEl) inputEl.disabled = true;
       if(btnEl) btnEl.disabled = true;
     });
@@ -2181,6 +2220,159 @@
   }
 
   window.MentirosoGame = { render, pause };
+})();
+</script>
+
+<script>
+// ---------------- Trivia Nivel Leyenda ----------------
+(function(){
+  const root = () => document.getElementById('trivia-root');
+
+  const state = {
+    screen: 'start',   // start | question | result
+    count: 10,
+    questions: [],
+    index: 0,
+    score: 0,
+    answered: false,
+    loading: false,
+    error: ''
+  };
+
+  function esc(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function render(){
+    const el = root();
+    if(!el) return;
+    if(state.screen === 'start') return renderStart(el);
+    if(state.screen === 'question') return renderQuestion(el);
+    if(state.screen === 'result') return renderResult(el);
+  }
+
+  function pause(){
+    // No hay timers ni conexiones que cortar en la trivia; se deja el
+    // progreso tal cual para cuando el usuario vuelva a abrir el overlay.
+  }
+
+  function renderStart(el){
+    el.innerHTML = `
+      <div class="trivia-start">
+        <p>Elegí cuántas preguntas querés responder. Se eligen al azar entre un banco grande, así que no se repiten siempre las mismas.</p>
+        <div class="trivia-count-grid">
+          ${[5, 10, 15, 20].map(n => `<button type="button" data-count="${n}" class="${state.count === n ? 'selected' : ''}">${n} preguntas</button>`).join('')}
+        </div>
+        <div class="mgame-error">${esc(state.error)}</div>
+        <button type="button" class="btn btn-solid" id="trivia-start-btn" ${state.loading ? 'disabled' : ''}>${state.loading ? 'Cargando...' : 'Empezar'}</button>
+      </div>
+    `;
+    el.querySelectorAll('[data-count]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.count = parseInt(btn.getAttribute('data-count'), 10);
+        render();
+      });
+    });
+    el.querySelector('#trivia-start-btn').addEventListener('click', startGame);
+  }
+
+  async function startGame(){
+    state.loading = true;
+    state.error = '';
+    render();
+    try{
+      const res = await fetch('/api/trivia/preguntas?count=' + state.count);
+      const data = await res.json();
+      if(!res.ok || !Array.isArray(data.questions) || !data.questions.length){
+        throw new Error('No se pudieron cargar las preguntas.');
+      }
+      state.questions = data.questions;
+      state.index = 0;
+      state.score = 0;
+      state.answered = false;
+      state.screen = 'question';
+    }catch(e){
+      state.error = 'No se pudo conectar con el servidor. Probá de nuevo.';
+    }finally{
+      state.loading = false;
+      render();
+    }
+  }
+
+  function renderQuestion(el){
+    const q = state.questions[state.index];
+    el.innerHTML = `
+      <div class="trivia-progress-row">
+        <div class="trivia-progress"><span>${state.index + 1}</span> / ${state.questions.length}</div>
+        <div class="trivia-score-live">Puntaje: ${state.score}</div>
+      </div>
+      <div class="trivia-question">${esc(q.question)}</div>
+      <div class="trivia-options">
+        ${q.options.map((opt, i) => `<button type="button" class="trivia-option" data-i="${i}">${esc(opt)}</button>`).join('')}
+      </div>
+      <div class="trivia-next-row"></div>
+    `;
+    el.querySelectorAll('.trivia-option').forEach(btn => {
+      btn.addEventListener('click', () => selectAnswer(parseInt(btn.getAttribute('data-i'), 10)));
+    });
+  }
+
+  function selectAnswer(i){
+    if(state.answered) return;
+    state.answered = true;
+    const q = state.questions[state.index];
+    const buttons = root().querySelectorAll('.trivia-option');
+    buttons.forEach(btn => {
+      const idx = parseInt(btn.getAttribute('data-i'), 10);
+      btn.disabled = true;
+      if(idx === q.correctIndex) btn.classList.add('correct');
+      else if(idx === i) btn.classList.add('incorrect');
+    });
+    if(i === q.correctIndex) state.score++;
+
+    const nextRow = root().querySelector('.trivia-next-row');
+    const isLast = state.index >= state.questions.length - 1;
+    if(nextRow){
+      nextRow.innerHTML = `<button type="button" class="btn btn-solid" id="trivia-next-btn">${isLast ? 'Ver resultado' : 'Siguiente pregunta'}</button>`;
+      nextRow.querySelector('#trivia-next-btn').addEventListener('click', () => {
+        if(isLast){
+          state.screen = 'result';
+        } else {
+          state.index++;
+          state.answered = false;
+        }
+        render();
+      });
+    }
+  }
+
+  function renderResult(el){
+    const total = state.questions.length;
+    const pct = total ? Math.round((state.score / total) * 100) : 0;
+    let msg;
+    if(pct === 100) msg = '¡Perfecto! Sos una leyenda de verdad.';
+    else if(pct >= 70) msg = 'Muy bien, sabés bastante de fútbol.';
+    else if(pct >= 40) msg = 'Nada mal, pero hay margen para mejorar.';
+    else msg = 'Che, hay que ver más partidos... ¡probá de nuevo!';
+
+    el.innerHTML = `
+      <div class="trivia-result">
+        <div class="big-score">${state.score} / ${total}</div>
+        <div class="msg">${esc(msg)}</div>
+        <div class="mgame-actions">
+          <button type="button" class="btn btn-solid" id="trivia-again-btn">Jugar de nuevo</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('#trivia-again-btn').addEventListener('click', () => {
+      state.screen = 'start';
+      render();
+    });
+  }
+
+  window.TriviaGame = { render, pause };
 })();
 </script>
 
