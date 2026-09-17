@@ -26,7 +26,7 @@ app.use(express.static(PUBLIC_DIR));
 // https://aistudio.google.com/ (botón "Get API Key") y ponela en un archivo .env
 // (mirá .env.example) o como variable de entorno de tu hosting.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 function aiAvailable() {
   return !!GEMINI_API_KEY;
