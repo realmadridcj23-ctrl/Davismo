@@ -1,4 +1,7 @@
 // Datos de categorías compartidos con el cliente (mismo contenido que public/index.html)
+// Cada jugador/selección/club tiene una lista de alias (apodos, apellidos solos,
+// formas cortas) para que el chequeo LOCAL (sin IA) reconozca cómo la gente
+// realmente escribe los nombres al jugar.
 
 function mk(display, aliasesCsv){
     const aliases = (aliasesCsv + ',' + display).split(',').map(a => a.trim()).filter(Boolean);
@@ -12,50 +15,50 @@ function mk(display, aliasesCsv){
       hint: 'Futbolistas que ganaron el Balón de Oro masculino (1956–2025).',
       items: [
         mk('Stanley Matthews','matthews'),
-        mk('Alfredo Di Stéfano','di stefano,alfredo di stefano'),
+        mk('Alfredo Di Stéfano','di stefano,alfredo di stefano,la saeta rubia'),
         mk('Raymond Kopa','kopa'),
-        mk('Luis Suárez Miramontes','luis suarez,suarez miramontes'),
+        mk('Luis Suárez Miramontes','luis suarez,suarez miramontes,suarez miramontes luis'),
         mk('Omar Sívori','sivori'),
         mk('Josef Masopust','masopust'),
-        mk('Lev Yashin','yashin'),
+        mk('Lev Yashin','yashin,la arana negra'),
         mk('Denis Law','law'),
-        mk('Eusébio','eusebio'),
+        mk('Eusébio','eusebio,la pantera negra'),
         mk('Bobby Charlton','charlton'),
         mk('Flórián Albert','florian albert,albert'),
         mk('George Best','best'),
         mk('Gianni Rivera','rivera'),
-        mk('Gerd Müller','gerd muller,muller'),
+        mk('Gerd Müller','gerd muller,muller,der bomber'),
         mk('Johan Cruyff','cruyff'),
-        mk('Franz Beckenbauer','beckenbauer'),
+        mk('Franz Beckenbauer','beckenbauer,kaiser,el kaiser,der kaiser'),
         mk('Oleg Blokhin','blokhin'),
         mk('Allan Simonsen','simonsen'),
         mk('Kevin Keegan','keegan'),
         mk('Karl-Heinz Rummenigge','rummenigge,karl heinz rummenigge'),
-        mk('Paolo Rossi','rossi'),
+        mk('Paolo Rossi','rossi,pablito'),
         mk('Michel Platini','platini'),
         mk('Igor Belanov','belanov'),
         mk('Ruud Gullit','gullit'),
-        mk('Marco van Basten','van basten'),
+        mk('Marco van Basten','van basten,basten'),
         mk('Lothar Matthäus','lothar matthaus,matthaus'),
         mk('Jean-Pierre Papin','papin,jean pierre papin'),
-        mk('Roberto Baggio','baggio'),
+        mk('Roberto Baggio','baggio,il divin codino,codino'),
         mk('Hristo Stoichkov','stoichkov'),
         mk('George Weah','weah'),
         mk('Matthias Sammer','sammer'),
-        mk('Ronaldo Nazário','ronaldo nazario,ronaldo fenomeno,el fenomeno,r9'),
-        mk('Zinédine Zidane','zinedine zidane,zidane'),
+        mk('Ronaldo Nazário','ronaldo nazario,ronaldo fenomeno,el fenomeno,r9,ronaldo'),
+        mk('Zinédine Zidane','zinedine zidane,zidane,zizou'),
         mk('Rivaldo',''),
         mk('Luís Figo','luis figo,figo'),
         mk('Michael Owen','owen'),
         mk('Pavel Nedvěd','pavel nedved,nedved'),
-        mk('Andriy Shevchenko','shevchenko'),
-        mk('Ronaldinho','ronaldinho gaucho'),
+        mk('Andriy Shevchenko','shevchenko,sheva'),
+        mk('Ronaldinho','ronaldinho gaucho,gaucho'),
         mk('Fabio Cannavaro','cannavaro'),
         mk('Kaká','kaka'),
-        mk('Cristiano Ronaldo','cristiano,cr7'),
-        mk('Lionel Messi','messi,leo messi'),
+        mk('Cristiano Ronaldo','cristiano,cr7,el bicho,cristiano ronaldo dos santos aveiro,cr'),
+        mk('Lionel Messi','messi,leo messi,leo,la pulga,lio messi'),
         mk('Luka Modrić','luka modric,modric'),
-        mk('Karim Benzema','benzema'),
+        mk('Karim Benzema','benzema,km9'),
         mk('Rodri','rodrigo hernandez,rodri hernandez'),
         mk('Ousmane Dembélé','ousmane dembele,dembele')
       ]
@@ -65,14 +68,14 @@ function mk(display, aliasesCsv){
       short: 'campeones del Mundial',
       hint: 'Selecciones que ganaron la Copa Mundial de la FIFA (1930–2026).',
       items: [
-        mk('Uruguay',''),
-        mk('Italia',''),
-        mk('Alemania','alemania occidental,rfa'),
-        mk('Brasil',''),
-        mk('Inglaterra',''),
-        mk('Argentina',''),
-        mk('Francia',''),
-        mk('España','')
+        mk('Uruguay','la celeste'),
+        mk('Italia','azzurri,gli azzurri'),
+        mk('Alemania','alemania occidental,rfa,la mannschaft,mannschaft'),
+        mk('Brasil','la canarinha,canarinha,verdeamarela'),
+        mk('Inglaterra','los tres leones,three lions'),
+        mk('Argentina','la albiceleste,seleccion argentina'),
+        mk('Francia','les bleus'),
+        mk('España','la roja,la furia roja')
       ]
     },
     champions: {
@@ -80,24 +83,24 @@ function mk(display, aliasesCsv){
       short: 'campeones de la Champions League',
       hint: 'Clubes que ganaron la Copa de Europa / Champions League (1956–2026).',
       items: [
-        mk('Real Madrid',''),
-        mk('AC Milan','milan'),
-        mk('Liverpool',''),
-        mk('Bayern Múnich','bayern munich,bayern'),
-        mk('Ajax',''),
-        mk('Barcelona','fc barcelona,barca'),
-        mk('Manchester United','man united,man utd'),
-        mk('Inter de Milán','inter,internazionale,inter milan'),
-        mk('Nottingham Forest',''),
-        mk('Juventus',''),
-        mk('Benfica',''),
+        mk('Real Madrid','madrid,merengues,los blancos'),
+        mk('AC Milan','milan,rossoneri'),
+        mk('Liverpool','los reds,liverpool fc'),
+        mk('Bayern Múnich','bayern munich,bayern,die roten'),
+        mk('Ajax','ajax amsterdam'),
+        mk('Barcelona','fc barcelona,barca,blaugrana,culers'),
+        mk('Manchester United','man united,man utd,red devils,diablos rojos'),
+        mk('Inter de Milán','inter,internazionale,inter milan,nerazzurri'),
+        mk('Nottingham Forest','forest'),
+        mk('Juventus','juve,la vecchia signora,bianconeri'),
+        mk('Benfica','aguias,las aguilas'),
         mk('Porto','fc porto,oporto'),
-        mk('Chelsea',''),
-        mk('Manchester City','man city'),
-        mk('Celtic',''),
-        mk('Feyenoord',''),
+        mk('Chelsea','the blues,los blues'),
+        mk('Manchester City','man city,citizens'),
+        mk('Celtic','celtic fc,los bhoys'),
+        mk('Feyenoord','feyenoord rotterdam'),
         mk('PSV Eindhoven','psv'),
-        mk('Aston Villa',''),
+        mk('Aston Villa','villa'),
         mk('Hamburgo','hamburger sv,hsv'),
         mk('Steaua Bucarest','steaua'),
         mk('Estrella Roja de Belgrado','estrella roja,red star belgrade,crvena zvezda'),
@@ -111,14 +114,14 @@ function mk(display, aliasesCsv){
       short: 'campeones de la Copa América',
       hint: 'Selecciones que ganaron la Copa América.',
       items: [
-        mk('Uruguay',''),
-        mk('Argentina',''),
-        mk('Brasil',''),
-        mk('Paraguay',''),
-        mk('Perú','peru'),
-        mk('Bolivia',''),
-        mk('Chile',''),
-        mk('Colombia','')
+        mk('Uruguay','la celeste'),
+        mk('Argentina','la albiceleste'),
+        mk('Brasil','la canarinha,canarinha'),
+        mk('Paraguay','la albirroja'),
+        mk('Perú','peru,la blanquirroja'),
+        mk('Bolivia','la verde'),
+        mk('Chile','la roja'),
+        mk('Colombia','los cafeteros,la tricolor')
       ]
     }
   };
@@ -133,10 +136,8 @@ function normalize(str){
     .trim();
 }
 
-// Lista de nombres de referencia (solo como contexto/ejemplos para la IA,
-// YA NO se usa para validar de forma estricta: la IA puede aceptar
-// respuestas correctas que no estén en esta lista, y las respuestas de
-// esta lista siguen sirviendo como ejemplos para que no invente cosas).
+// Lista de nombres de referencia (solo como contexto/ejemplos, por ejemplo
+// para mostrar pistas en pantalla).
 function referenceNames(key){
   const cat = CATEGORIES[key];
   if(!cat) return [];
