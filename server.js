@@ -6,6 +6,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { CATEGORIES, normalize, referenceNames } = require('./gameData');
+const { FIXED_QUESTIONS, buildDynamicQuestions, shuffle } = require('./triviaData');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,7 +27,7 @@ app.use(express.static(PUBLIC_DIR));
 // https://aistudio.google.com/ (botón "Get API Key") y ponela en un archivo .env
 // (mirá .env.example) o como variable de entorno de tu hosting.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 
 function aiAvailable() {
   return !!GEMINI_API_KEY;
@@ -79,95 +80,32 @@ async function callClaude({ system, messages, maxTokens }) {
   return text;
 }
 
-function extractJson(text) {
-  // Saca el texto de un posible bloque ```json ... ``` y parsea.
-  const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-  const start = cleaned.indexOf('{');
-  const end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('La IA no devolvió JSON válido');
-  return JSON.parse(cleaned.slice(start, end + 1));
-}
+// ==================== VERIFICACIÓN DE RESPUESTAS DEL MENTIROSO ====================
+// Ya NO usa IA: es un chequeo instantáneo y exacto contra la lista oficial de
+// cada categoría (gameData.js), con sus alias/apodos ya cargados ahí. Esto la
+// hace más rápida y más precisa que depender de un modelo externo.
 
 // ---- Verificación de una respuesta contra UNA categoría puntual ----
-async function verifyAnswerInCategory(query, categoryKey) {
+function verifyAnswerInCategory(query, categoryKey) {
   const cat = CATEGORIES[categoryKey];
-  if (!cat) throw new Error('Categoría inválida');
+  if (!cat) return { valid: false, display: null, reason: 'Esa categoría no existe.' };
 
-  const examples = referenceNames(categoryKey).join(', ');
-  const system =
-    'Sos el árbitro de un juego de trivia futbolera llamado "Mentiroso Futbolero". ' +
-    'Te doy una categoría y una respuesta que dio un jugador, y tenés que decidir si esa ' +
-    'respuesta es correcta para esa categoría, usando tu conocimiento real de fútbol (no solo ' +
-    'la lista de ejemplos que te paso, que es solo una referencia parcial para orientarte). ' +
-    'Aceptá apodos, apellidos solos, errores menores de tipeo/acentos, y nombres en cualquier ' +
-    'formato razonable, siempre que se refieran sin ambigüedad a una respuesta correcta. ' +
-    'Si la respuesta es ambigua, incompleta, de otra categoría, o simplemente incorrecta, marcala como inválida. ' +
-    'Respondé ÚNICAMENTE con un objeto JSON, sin texto extra, con este formato exacto: ' +
-    '{"valid": true|false, "display": "Nombre canónico bien escrito, o null si no es válido", "reason": "explicación breve en español, una frase"}';
+  const qNorm = normalize(query);
+  if (!qNorm) return { valid: false, display: null, reason: 'Escribí un nombre.' };
 
-  const userMsg =
-    'Categoría: "' + cat.label + '"\n' +
-    'Descripción: ' + cat.hint + '\n' +
-    'Ejemplos de referencia (no exhaustivo): ' + examples + '\n' +
-    'Respuesta del jugador a evaluar: "' + query + '"';
-
-  const raw = await callClaude({
-    system,
-    messages: [{ role: 'user', content: userMsg }],
-    maxTokens: 300
-  });
-
-  const parsed = extractJson(raw);
-  return {
-    valid: !!parsed.valid,
-    display: parsed.valid ? (parsed.display || query) : null,
-    reason: parsed.reason || ''
-  };
+  const found = cat.items.find(item => item.aliases.some(a => normalize(a) === qNorm));
+  if (found) {
+    return { valid: true, display: found.display, reason: 'Coincide con la lista oficial de la categoría.' };
+  }
+  return { valid: false, display: null, reason: 'No es una respuesta válida para esta categoría.' };
 }
 
 // ---- Verificación contra TODAS las categorías (para el asistente) ----
-async function verifyAnswerAllCategories(query) {
-  const keys = Object.keys(CATEGORIES);
-  const catBlocks = keys
-    .map(
-      k =>
-        '- key: "' +
-        k +
-        '", categoría: "' +
-        CATEGORIES[k].label +
-        '", descripción: ' +
-        CATEGORIES[k].hint +
-        ' Ejemplos: ' +
-        referenceNames(k).slice(0, 12).join(', ') +
-        '...'
-    )
-    .join('\n');
-
-  const system =
-    'Sos el árbitro de un juego de trivia futbolera llamado "Mentiroso Futbolero". ' +
-    'Te paso una lista de categorías posibles y una respuesta de un jugador. Decidí en cuál o ' +
-    'cuáles categorías esa respuesta sería válida, usando tu conocimiento real de fútbol (los ' +
-    'ejemplos son solo referencia parcial, no la única verdad). Si no es válida en ninguna, la ' +
-    'lista queda vacía. Respondé ÚNICAMENTE con JSON, sin texto extra, formato exacto: ' +
-    '{"matches": [{"categoryKey": "clave_exacta", "display": "Nombre canónico bien escrito"}]}';
-
-  const userMsg = 'Categorías:\n' + catBlocks + '\n\nRespuesta del jugador a evaluar: "' + query + '"';
-
-  const raw = await callClaude({
-    system,
-    messages: [{ role: 'user', content: userMsg }],
-    maxTokens: 400
-  });
-
-  const parsed = extractJson(raw);
-  const matches = Array.isArray(parsed.matches) ? parsed.matches : [];
-  return matches
-    .filter(m => m && CATEGORIES[m.categoryKey])
-    .map(m => ({
-      categoryKey: m.categoryKey,
-      categoryLabel: CATEGORIES[m.categoryKey].label,
-      display: m.display || query
-    }));
+function verifyAnswerAllCategories(query) {
+  return Object.keys(CATEGORIES)
+    .map(key => ({ key, result: verifyAnswerInCategory(query, key) }))
+    .filter(r => r.result.valid)
+    .map(r => ({ categoryKey: r.key, categoryLabel: CATEGORIES[r.key].label, display: r.result.display }));
 }
 
 // ==================== REGISTRO ====================
@@ -226,6 +164,33 @@ app.get('/api/miembros', (req, res) => {
   res.json({ members: users.map(u => u.username) });
 });
 
+// ==================== TRIVIA NIVEL LEYENDA ====================
+// No usa IA: es un banco propio de preguntas (fijas + generadas a partir de
+// las categorías del Mentiroso) que se mezcla al azar en cada pedido, así
+// que cada partida sale distinta y responde al instante.
+app.get('/api/trivia/preguntas', (req, res) => {
+  let count = parseInt(req.query.count, 10);
+  if (isNaN(count)) count = 10;
+
+  const pool = FIXED_QUESTIONS.concat(buildDynamicQuestions(CATEGORIES));
+  count = Math.max(1, Math.min(pool.length, count));
+
+  const questions = shuffle(pool)
+    .slice(0, count)
+    .map(item => {
+      // Mezclamos también el orden de las opciones de cada pregunta.
+      const tagged = item.options.map((opt, idx) => ({ opt, correct: idx === item.correctIndex }));
+      const shuffledOptions = shuffle(tagged);
+      return {
+        question: item.question,
+        options: shuffledOptions.map(o => o.opt),
+        correctIndex: shuffledOptions.findIndex(o => o.correct)
+      };
+    });
+
+  res.json({ questions, total: pool.length });
+});
+
 // ==================== ASISTENTE (IA de davismo) ====================
 function categoriesMeta() {
   return Object.keys(CATEGORIES).map(key => {
@@ -238,10 +203,10 @@ app.get('/api/categorias', (req, res) => {
   res.json({ categories: categoriesMeta() });
 });
 
-// Verificación de una respuesta contra una categoría (o todas), usando IA real.
+// Verificación de una respuesta contra una categoría (o todas), local e instantánea.
 // La usan: 1) el botón "Asistente" para consultar una respuesta suelta,
 //          2) el modo LOCAL del Mentiroso (mismo dispositivo) para validar en vivo.
-app.post('/api/asistente/verificar', async (req, res) => {
+app.post('/api/asistente/verificar', (req, res) => {
   const body = req.body || {};
   const query = (body.query || '').toString().trim();
   const categoryKey = (body.categoryKey || '').toString().trim();
@@ -252,31 +217,16 @@ app.post('/api/asistente/verificar', async (req, res) => {
   if (categoryKey && !CATEGORIES[categoryKey]) {
     return res.status(400).json({ ok: false, error: 'Esa categoría no existe.' });
   }
-  if (!aiAvailable()) {
-    return res.status(503).json({
-      ok: false,
-      error:
-        'La IA todavía no está configurada en el servidor. Definí la variable de entorno ANTHROPIC_API_KEY (ver .env.example) y reiniciá el servidor.'
-    });
-  }
 
-  try {
-    if (categoryKey) {
-      const result = await verifyAnswerInCategory(query, categoryKey);
-      const matches = result.valid
-        ? [{ categoryKey, categoryLabel: CATEGORIES[categoryKey].label, display: result.display }]
-        : [];
-      return res.json({ ok: true, query, valid: result.valid, matches, reason: result.reason });
-    }
-    const matches = await verifyAnswerAllCategories(query);
-    return res.json({ ok: true, query, valid: matches.length > 0, matches });
-  } catch (e) {
-    console.error('Error verificando respuesta con IA:', e);
-    return res.status(502).json({
-      ok: false,
-      error: 'No se pudo consultar a la IA en este momento. Probá de nuevo en unos segundos.'
-    });
+  if (categoryKey) {
+    const result = verifyAnswerInCategory(query, categoryKey);
+    const matches = result.valid
+      ? [{ categoryKey, categoryLabel: CATEGORIES[categoryKey].label, display: result.display }]
+      : [];
+    return res.json({ ok: true, query, valid: result.valid, matches, reason: result.reason });
   }
+  const matches = verifyAnswerAllCategories(query);
+  return res.json({ ok: true, query, valid: matches.length > 0, matches });
 });
 
 // Asistente de IA general de davismo: se le puede preguntar cualquier cosa.
@@ -292,13 +242,15 @@ app.post('/api/asistente/chat', async (req, res) => {
     return res.status(503).json({
       ok: false,
       error:
-        'La IA todavía no está configurada en el servidor. Definí la variable de entorno ANTHROPIC_API_KEY (ver .env.example) y reiniciá el servidor.'
+        'El asistente de chat todavía no está configurado en el servidor. Definí la variable de entorno GEMINI_API_KEY (ver .env.example) y reiniciá el servidor.'
     });
   }
 
   const system =
     'Sos el Asistente de IA de davismo, la comunidad y el sitio de fútbol de "davismo". ' +
-    'Hablás en español rioplatense, con onda, cercano, pero sin exagerar el voseo ni ser payasesco. ' +
+    'Respondé en español neutro, formal y claro, sin modismos regionales ni jerga de ningún país ' +
+    '(nada de voseo marcado, "che", "boludo", etc.), salvo que el usuario te pida explícitamente ' +
+    'adoptar otro tono o dialecto. ' +
     'Podés responder cualquier pregunta (de fútbol, del sitio, o de cualquier otro tema en general), ' +
     'ayudar a explicar cómo se juega el "Mentiroso Futbolero" (el juego de la casa: se apuesta cuántos ' +
     'nombres se pueden decir de una categoría futbolera, y si te cantan "mentiroso" tenés que nombrarlos ' +
@@ -542,68 +494,42 @@ io.on('connection', socket => {
     startChallenge(room);
   });
 
-  // La verificación de cada respuesta se hace con IA (async), por eso este
-  // handler es async y avisa "pendingCheck" mientras espera la respuesta
-  // del modelo, para que el cliente pueda mostrar "revisando...".
-  socket.on('mentiroso:answer', async payload => {
+  // La verificación ahora es instantánea (chequeo local contra la lista real
+  // de la categoría), por eso este handler ya no necesita ser async ni avisar
+  // "pendingCheck" mientras espera una respuesta externa.
+  socket.on('mentiroso:answer', payload => {
     const room = getRoom();
     if (!room || room.screen !== 'challenge') return;
     if (socket.data.playerIndex !== room.bidder) return;
-    if (room.pendingCheck) return;
 
     const raw = ((payload && payload.text) || '').toString();
     if (!raw.trim()) return;
 
-    room.pendingCheck = true;
-    io.to(room.code).emit('mentiroso:checking', { text: raw });
-
-    let result = null;
-    let failedToVerify = false;
-    try {
-      result = await verifyAnswerInCategory(raw, room.categoryKey);
-    } catch (e) {
-      console.error('Error verificando respuesta (online):', e);
-      failedToVerify = true;
-    }
-
-    // La sala pudo haber cambiado mientras esperábamos a la IA (ej: se acabó
-    // el tiempo). Si ya no estamos en 'challenge', no hacemos nada más.
-    const freshRoom = rooms.get(room.code);
-    if (!freshRoom || freshRoom.screen !== 'challenge') return;
-
-    freshRoom.pendingCheck = false;
-
-    if (failedToVerify) {
-      io.to(freshRoom.code).emit('mentiroso:answer-error', {
-        message: 'No se pudo verificar con la IA, probá de nuevo.'
-      });
-      broadcast(freshRoom);
-      return;
-    }
+    const result = verifyAnswerInCategory(raw, room.categoryKey);
 
     if (!result.valid) {
-      stopTimer(freshRoom);
-      finishChallenge(freshRoom, false, 'invalido', raw);
+      stopTimer(room);
+      finishChallenge(room, false, 'invalido', raw);
       return;
     }
 
     const canonicalNorm = normalize(result.display);
-    if (freshRoom.acceptedNormalized.includes(canonicalNorm)) {
-      stopTimer(freshRoom);
-      finishChallenge(freshRoom, false, 'duplicado', raw);
+    if (room.acceptedNormalized.includes(canonicalNorm)) {
+      stopTimer(room);
+      finishChallenge(room, false, 'duplicado', raw);
       return;
     }
 
-    freshRoom.acceptedNormalized.push(canonicalNorm);
-    freshRoom.answersGiven.push(result.display);
+    room.acceptedNormalized.push(canonicalNorm);
+    room.answersGiven.push(result.display);
 
-    if (freshRoom.answersGiven.length >= freshRoom.bid) {
-      stopTimer(freshRoom);
-      finishChallenge(freshRoom, true);
+    if (room.answersGiven.length >= room.bid) {
+      stopTimer(room);
+      finishChallenge(room, true);
       return;
     }
 
-    broadcast(freshRoom);
+    broadcast(room);
   });
 
   socket.on('mentiroso:nextRound', () => {
@@ -651,4 +577,4 @@ server.listen(PORT, () => {
         'de respuestas del Mentiroso no van a funcionar hasta que la definas (ver .env.example).'
     );
   }
-})
+});
