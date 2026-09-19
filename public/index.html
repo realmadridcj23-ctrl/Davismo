@@ -501,6 +501,59 @@
     .trivia-options{ grid-template-columns: 1fr; }
   }
 
+  /* ---- Impostor ---- */
+  .imp-lobby-form{ max-width: 360px; margin: 0 auto; text-align:center; }
+  .imp-lobby-form input{
+    width:100%; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:12px 14px;
+    color: var(--text-primary); font-size:14.5px; font-family:'Inter',sans-serif; outline:none; margin-bottom:12px;
+  }
+  .imp-lobby-form input:focus-visible{ border-color: var(--green-signal); }
+  .imp-lobby-tabs{ display:flex; gap:8px; margin-bottom:18px; justify-content:center; }
+  .imp-lobby-tabs button{ background:transparent; border:1px solid var(--line); color: var(--text-muted); padding:9px 18px; border-radius:6px; font-size:13.5px; cursor:pointer; font-family:'Inter',sans-serif; }
+  .imp-lobby-tabs button.active{ border-color: var(--green-signal); color: var(--green-signal); }
+  .imp-code-display{ font-family:'Chakra Petch',sans-serif; font-size:34px; font-weight:700; letter-spacing:4px; color: var(--green-signal); text-align:center; margin: 6px 0 18px 0; }
+  .imp-player-grid{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:20px; }
+  .imp-player-chip{ background: var(--bg-void); border:1px solid var(--line); padding:8px 14px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .imp-player-chip .dot{ width:7px; height:7px; border-radius:50%; background: var(--green-signal); display:inline-block; }
+  .imp-player-chip.off{ color: var(--text-muted); }
+  .imp-player-chip.off .dot{ background: var(--card-red); }
+  .imp-player-chip.host{ border-color: var(--green-deep); }
+  .imp-hint{ text-align:center; color: var(--text-muted); font-size:13.5px; margin-bottom:18px; }
+  .imp-actions{ text-align:center; }
+  .imp-word-card{ text-align:center; background: var(--bg-void); border:1px solid var(--green-deep); border-radius:12px; padding:28px 20px; margin-bottom:20px; }
+  .imp-word-card.imp{ border-color: var(--card-red-line); }
+  .imp-word-card .cat{ font-size:12.5px; color: var(--text-muted); text-transform: none; margin-bottom:10px; }
+  .imp-word-card .word{ font-family:'Chakra Petch',sans-serif; font-size:30px; font-weight:700; color: var(--green-signal); }
+  .imp-word-card.imp .word{ color: var(--card-red); font-size:22px; }
+  .imp-game-layout{ display:grid; grid-template-columns: 1fr 260px; gap:20px; }
+  .imp-chat-col{ display:flex; flex-direction:column; height: 380px; }
+  .imp-chat-messages{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:14px; background: var(--bg-void); border:1px solid var(--line); border-radius:10px; margin-bottom:12px; }
+  .imp-chat-msg{ max-width: 85%; padding:9px 13px; border-radius:10px; font-size:13.5px; line-height:1.45; background: var(--bg-panel-2); border:1px solid var(--line); align-self:flex-start; }
+  .imp-chat-msg .name{ font-weight:600; color: var(--green-signal); font-size:12px; display:block; margin-bottom:2px; }
+  .imp-chat-msg.me{ align-self:flex-end; background: var(--green-signal); color:#06280f; border-color: transparent; }
+  .imp-chat-msg.me .name{ color:#06280f; }
+  .imp-side-col{ display:flex; flex-direction:column; }
+  .imp-side-col h4{ font-size:12.5px; text-transform:none; color: var(--text-muted); margin: 0 0 10px 0; font-weight:600; }
+  .imp-side-players{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+  .imp-side-players .imp-player-chip{ justify-content:flex-start; }
+  .imp-vote-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:18px; }
+  .imp-vote-btn{ background: var(--bg-void); border:1px solid var(--line); border-radius:8px; padding:14px 10px; cursor:pointer; color: var(--text-primary); font-size:14px; font-family:'Inter',sans-serif; text-align:center; }
+  .imp-vote-btn:hover:not(:disabled){ border-color: var(--green-deep); }
+  .imp-vote-btn.selected{ border-color: var(--green-signal); color: var(--green-signal); background: rgba(216,165,60,0.08); }
+  .imp-vote-btn:disabled{ opacity: 0.5; cursor: default; }
+  .imp-results{ text-align:center; }
+  .imp-results .verdict{ font-family:'Chakra Petch',sans-serif; font-size:26px; font-weight:700; margin-bottom:8px; }
+  .imp-results .verdict.win{ color: var(--green-signal); }
+  .imp-results .verdict.lose{ color: var(--card-red); }
+  .imp-results .reveal-line{ color: var(--text-muted); font-size:14.5px; margin-bottom:4px; }
+  .imp-results .reveal-line b{ color: var(--text-primary); }
+  .imp-vote-tally{ margin: 18px 0; text-align:left; max-width: 320px; margin-left:auto; margin-right:auto; }
+  .imp-vote-tally-row{ display:flex; justify-content:space-between; font-size:13.5px; padding:6px 0; border-bottom:1px solid var(--line); color: var(--text-muted); }
+  @media (max-width: 720px){
+    .imp-game-layout{ grid-template-columns: 1fr; }
+    .imp-chat-col{ height: 300px; }
+  }
+
   /* ---------- TOAST ---------- */
   .toast{
     position: fixed;
@@ -660,10 +713,10 @@
         <button type="button" class="btn btn-outline" data-soon>Jugar</button>
       </div>
       <div class="game-card">
-        <span class="game-tag">Deducción</span>
+        <span class="game-tag">Deducción · Online</span>
         <h3>Impostor</h3>
-        <p>Juega y disfruta con el davismo, el tipico impostor de 412.</p>
-        <button type="button" class="btn btn-outline" data-soon>Jugar</button>
+        <p>Juega y disfruta con el davismo, el tipico impostor de 412. Mínimo 4 jugadores online.</p>
+        <button type="button" class="btn btn-outline" data-open="impostor">Jugar</button>
       </div>
       <div class="game-card">
         <span class="game-tag">Preguntas · Nivel Leyenda</span>
@@ -798,6 +851,18 @@
   </div>
 </div>
 
+<!-- ---------- IMPOSTOR OVERLAY ---------- -->
+<div class="overlay" id="overlay-impostor" aria-hidden="true">
+  <div class="overlay-panel wide">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Impostor Futbolero</h2>
+      <p>Todos reciben la misma palabra futbolera, menos el impostor. Discutan en el chat y voten quién creen que es.</p>
+    </div>
+    <div id="impostor-root"></div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ---------------- Interactive green background ----------------
@@ -900,7 +965,8 @@
     registro: document.getElementById('overlay-registro'),
     mentiroso: document.getElementById('overlay-mentiroso'),
     asistente: document.getElementById('overlay-asistente'),
-    trivia: document.getElementById('overlay-trivia')
+    trivia: document.getElementById('overlay-trivia'),
+    impostor: document.getElementById('overlay-impostor')
   };
 
   function openOverlay(name){
@@ -911,11 +977,13 @@
     if(name === 'mentiroso' && window.MentirosoGame){ window.MentirosoGame.render(); }
     if(name === 'asistente' && window.DavismoAsistente){ window.DavismoAsistente.onOpen(); }
     if(name === 'trivia' && window.TriviaGame){ window.TriviaGame.render(); }
+    if(name === 'impostor' && window.ImpostorGame){ window.ImpostorGame.render(); }
   }
   function closeOverlay(el){
     el.classList.remove('open');
     el.setAttribute('aria-hidden', 'true');
     if(el && el.id === 'overlay-mentiroso' && window.MentirosoGame){ window.MentirosoGame.pause(); }
+    if(el && el.id === 'overlay-impostor' && window.ImpostorGame){ window.ImpostorGame.pause(); }
   }
   function closeAll(){
     Object.values(overlays).forEach(closeOverlay);
@@ -2390,6 +2458,296 @@
   }
 
   window.TriviaGame = { render, pause };
+})();
+</script>
+
+<script>
+// ---------------- Impostor Futbolero (online, mínimo 4 jugadores) ----------------
+(function(){
+  const root = () => document.getElementById('impostor-root');
+
+  const state = {
+    code: null,
+    myId: null,
+    myName: '',
+    tab: 'create',
+    nameInput: '',
+    joinCodeInput: '',
+    error: '',
+    serverState: null,
+    myWord: null,
+    wordCardSeen: false,
+    chatLog: [],
+    selectedVoteTarget: null
+  };
+
+  let socket = null;
+
+  function esc(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function ensureSocket(){
+    if(socket) return socket;
+    socket = io();
+    socket.on('impostor:state', s => {
+      const isFirst = !state.serverState;
+      state.serverState = s;
+      if(isFirst && Array.isArray(s.chat)) state.chatLog = s.chat.slice();
+      state.error = '';
+      render();
+    });
+    socket.on('impostor:chat-message', msg => {
+      state.chatLog.push(msg);
+      appendChatMessageDom(msg);
+    });
+    socket.on('impostor:your-word', info => {
+      state.myWord = info;
+      state.wordCardSeen = false;
+      render();
+    });
+    socket.on('disconnect', () => {
+      state.error = 'Se perdió la conexión con el servidor.';
+      render();
+    });
+    return socket;
+  }
+
+  function reset(){
+    state.code = null;
+    state.myId = null;
+    state.serverState = null;
+    state.myWord = null;
+    state.wordCardSeen = false;
+    state.chatLog = [];
+    state.selectedVoteTarget = null;
+    state.error = '';
+  }
+
+  function pause(){
+    if(socket && state.code){
+      socket.emit('impostor:leave');
+    }
+    reset();
+  }
+
+  function render(){
+    const el = root();
+    if(!el) return;
+    if(!state.code) return renderLobbyForm(el);
+    if(!state.serverState) { el.innerHTML = '<p class="imp-hint">Conectando...</p>'; return; }
+
+    const s = state.serverState;
+    if(s.screen === 'lobby') return renderWaitingRoom(el, s);
+    if((s.screen === 'discussion' || s.screen === 'voting') && state.myWord && !state.wordCardSeen) return renderWordCard(el);
+    if(s.screen === 'discussion') return renderDiscussion(el, s);
+    if(s.screen === 'voting') return renderVoting(el, s);
+    if(s.screen === 'results') return renderResults(el, s);
+  }
+
+  // ---------------- Lobby ----------------
+  function renderLobbyForm(el){
+    el.innerHTML = `
+      <div class="imp-lobby-form">
+        <div class="imp-lobby-tabs">
+          <button type="button" data-tab="create" class="${state.tab === 'create' ? 'active' : ''}">Crear sala</button>
+          <button type="button" data-tab="join" class="${state.tab === 'join' ? 'active' : ''}">Unirme con código</button>
+        </div>
+        <input type="text" id="imp-name-input" placeholder="Tu nombre" maxlength="18" value="${esc(state.nameInput)}">
+        ${state.tab === 'join' ? `<input type="text" id="imp-code-input" placeholder="Código de la sala" maxlength="5" value="${esc(state.joinCodeInput)}" style="text-transform:uppercase;">` : ''}
+        <div class="mgame-error">${esc(state.error)}</div>
+        <button type="button" class="btn btn-solid" id="imp-lobby-submit">${state.tab === 'create' ? 'Crear sala' : 'Unirme'}</button>
+      </div>
+    `;
+    el.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => { state.tab = btn.getAttribute('data-tab'); render(); });
+    });
+    el.querySelector('#imp-name-input').addEventListener('input', e => { state.nameInput = e.target.value; });
+    const codeInput = el.querySelector('#imp-code-input');
+    if(codeInput) codeInput.addEventListener('input', e => { state.joinCodeInput = e.target.value.toUpperCase(); });
+    el.querySelector('#imp-lobby-submit').addEventListener('click', submitLobbyForm);
+  }
+
+  function submitLobbyForm(){
+    const name = state.nameInput.trim();
+    if(!name){ state.error = 'Escribí tu nombre.'; render(); return; }
+    ensureSocket();
+    if(state.tab === 'create'){
+      socket.emit('impostor:create', { playerName: name }, res => {
+        if(!res || !res.ok){ state.error = (res && res.error) || 'No se pudo crear la sala.'; render(); return; }
+        state.code = res.code;
+        state.myId = res.playerId;
+        state.myName = name;
+        render();
+      });
+    } else {
+      const code = state.joinCodeInput.trim().toUpperCase();
+      if(!code){ state.error = 'Escribí el código de la sala.'; render(); return; }
+      socket.emit('impostor:join', { code, playerName: name }, res => {
+        if(!res || !res.ok){ state.error = (res && res.error) || 'No se pudo unir a la sala.'; render(); return; }
+        state.code = res.code;
+        state.myId = res.playerId;
+        state.myName = name;
+        render();
+      });
+    }
+  }
+
+  // ---------------- Sala de espera ----------------
+  function renderWaitingRoom(el, s){
+    const connectedCount = s.players.filter(p => p.connected).length;
+    const isHost = state.myId === s.hostId;
+    const canStart = isHost && connectedCount >= s.minPlayers;
+    el.innerHTML = `
+      <div class="imp-code-display">${esc(s.code)}</div>
+      <p class="imp-hint">Compartí este código para que se sumen. Mínimo ${s.minPlayers} jugadores conectados para empezar (ahora hay ${connectedCount}).</p>
+      <div class="imp-player-grid">
+        ${s.players.map(p => `
+          <span class="imp-player-chip ${p.connected ? '' : 'off'} ${p.id === s.hostId ? 'host' : ''}">
+            <span class="dot"></span>${esc(p.name)}${p.id === s.hostId ? ' (host)' : ''}${p.id === state.myId ? ' — vos' : ''}
+          </span>
+        `).join('')}
+      </div>
+      <div class="mgame-error">${esc(state.error)}</div>
+      <div class="imp-actions">
+        ${isHost
+          ? `<button type="button" class="btn btn-solid" id="imp-start-btn" ${canStart ? '' : 'disabled'}>Empezar partida</button>`
+          : `<p class="imp-hint">Esperando a que el host (${esc((s.players.find(p=>p.id===s.hostId)||{}).name || '')}) empiece la partida...</p>`}
+        <div style="margin-top:14px;"><button type="button" class="btn btn-outline" id="imp-leave-btn">Salir de la sala</button></div>
+      </div>
+    `;
+    const startBtn = el.querySelector('#imp-start-btn');
+    if(startBtn) startBtn.addEventListener('click', () => socket.emit('impostor:start'));
+    el.querySelector('#imp-leave-btn').addEventListener('click', () => { pause(); render(); });
+  }
+
+  // ---------------- Card de la palabra (privado) ----------------
+  function renderWordCard(el){
+    const info = state.myWord;
+    el.innerHTML = `
+      <div class="imp-word-card ${info.isImpostor ? 'imp' : ''}">
+        <div class="cat">Categoría: ${esc(info.category)}</div>
+        ${info.isImpostor
+          ? `<div class="word">SOS EL IMPOSTOR</div><p class="imp-hint" style="margin-top:14px;">No sabés la palabra. Escuchá las pistas de los demás y tratá de disimular sin que te descubran.</p>`
+          : `<div class="word">${esc(info.word)}</div><p class="imp-hint" style="margin-top:14px;">Esa es la palabra secreta. Dá pistas sutiles para demostrar que la sabés, sin decirla directamente.</p>`}
+      </div>
+      <div class="imp-actions">
+        <button type="button" class="btn btn-solid" id="imp-word-ok">Ya la vi, ir a discutir</button>
+      </div>
+    `;
+    el.querySelector('#imp-word-ok').addEventListener('click', () => {
+      state.wordCardSeen = true;
+      render();
+    });
+  }
+
+  // ---------------- Discusión (chat) ----------------
+  function renderDiscussion(el, s){
+    const isHost = state.myId === s.hostId;
+    el.innerHTML = `
+      <div class="imp-game-layout">
+        <div class="imp-chat-col">
+          <div class="imp-chat-messages" id="imp-chat-messages"></div>
+          <div class="assistant-input-row">
+            <input type="text" id="imp-chat-input" placeholder="Escribí una pista o comentario..." maxlength="300">
+            <button type="button" class="btn btn-solid" id="imp-chat-send">Enviar</button>
+          </div>
+        </div>
+        <div class="imp-side-col">
+          <h4>Jugadores</h4>
+          <div class="imp-side-players">
+            ${s.players.map(p => `<span class="imp-player-chip ${p.connected ? '' : 'off'} ${p.id === s.hostId ? 'host' : ''}"><span class="dot"></span>${esc(p.name)}${p.id === state.myId ? ' — vos' : ''}</span>`).join('')}
+          </div>
+          ${isHost ? `<button type="button" class="btn btn-solid" id="imp-vote-start-btn">Iniciar votación</button>` : `<p class="imp-hint">Cuando terminen de discutir, el host inicia la votación.</p>`}
+          <div style="margin-top:14px;"><button type="button" class="btn btn-outline" id="imp-leave-btn-2">Salir de la sala</button></div>
+        </div>
+      </div>
+    `;
+    renderAllChatMessages();
+    const input = el.querySelector('#imp-chat-input');
+    const send = () => {
+      const text = input.value.trim();
+      if(!text) return;
+      socket.emit('impostor:chat', { text });
+      input.value = '';
+    };
+    el.querySelector('#imp-chat-send').addEventListener('click', send);
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') send(); });
+    const voteBtn = el.querySelector('#imp-vote-start-btn');
+    if(voteBtn) voteBtn.addEventListener('click', () => socket.emit('impostor:startVoting'));
+    el.querySelector('#imp-leave-btn-2').addEventListener('click', () => { pause(); render(); });
+  }
+
+  function chatMsgHtml(msg){
+    const mine = msg.playerId === state.myId;
+    return `<div class="imp-chat-msg ${mine ? 'me' : ''}">${mine ? '' : `<span class="name">${esc(msg.name)}</span>`}${esc(msg.text)}</div>`;
+  }
+
+  function renderAllChatMessages(){
+    const box = document.getElementById('imp-chat-messages');
+    if(!box) return;
+    box.innerHTML = state.chatLog.map(chatMsgHtml).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function appendChatMessageDom(msg){
+    const box = document.getElementById('imp-chat-messages');
+    if(!box) return; // no estamos en la pantalla de discusión ahora mismo
+    box.insertAdjacentHTML('beforeend', chatMsgHtml(msg));
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // ---------------- Votación ----------------
+  function renderVoting(el, s){
+    const others = s.players.filter(p => p.connected && p.id !== state.myId);
+    const votedCount = s.players.filter(p => p.connected && p.voted).length;
+    const totalConnected = s.players.filter(p => p.connected).length;
+    el.innerHTML = `
+      <p class="imp-hint">¿Quién creés que es el impostor? Votaron ${votedCount} de ${totalConnected}.</p>
+      <div class="imp-vote-grid">
+        ${others.map(p => `<button type="button" class="imp-vote-btn ${state.selectedVoteTarget === p.id ? 'selected' : ''}" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}
+      </div>
+      <div class="imp-side-players" style="justify-content:center; display:flex; flex-wrap:wrap; gap:8px;">
+        ${s.players.map(p => `<span class="imp-player-chip ${p.connected ? '' : 'off'}"><span class="dot"></span>${esc(p.name)}${p.voted ? ' ✓' : ''}</span>`).join('')}
+      </div>
+    `;
+    el.querySelectorAll('.imp-vote-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-id');
+        state.selectedVoteTarget = targetId;
+        socket.emit('impostor:vote', { targetId });
+        render();
+      });
+    });
+  }
+
+  // ---------------- Resultados ----------------
+  function renderResults(el, s){
+    const r = s.reveal;
+    const isHost = state.myId === s.hostId;
+    const win = !!r.civilesGanan;
+    el.innerHTML = `
+      <div class="imp-results">
+        <div class="verdict ${win ? 'win' : 'lose'}">${win ? '¡Los civiles ganan!' : 'El impostor gana'}</div>
+        <p class="reveal-line">La palabra secreta era <b>${esc(r.secret.word)}</b> (categoría: ${esc(r.secret.category)})</p>
+        <p class="reveal-line">El impostor era <b>${esc(r.impostorName)}</b></p>
+        <div class="imp-vote-tally">
+          ${r.votes.map(v => `<div class="imp-vote-tally-row"><span>${esc(v.name)}</span><span>${v.voteFor ? '→ ' + esc((s.players.find(p=>p.id===v.voteFor)||{}).name || '?') : 'no votó'}</span></div>`).join('')}
+        </div>
+        ${isHost
+          ? `<button type="button" class="btn btn-solid" id="imp-again-btn">Jugar de nuevo</button>`
+          : `<p class="imp-hint">Esperando a que el host inicie una nueva ronda...</p>`}
+        <div style="margin-top:14px;"><button type="button" class="btn btn-outline" id="imp-leave-btn-3">Salir de la sala</button></div>
+      </div>
+    `;
+    const again = el.querySelector('#imp-again-btn');
+    if(again) again.addEventListener('click', () => socket.emit('impostor:playAgain'));
+    el.querySelector('#imp-leave-btn-3').addEventListener('click', () => { pause(); render(); });
+  }
+
+  window.ImpostorGame = { render, pause };
 })();
 </script>
 

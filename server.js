@@ -568,6 +568,285 @@ io.on('connection', socket => {
   }
 });
 
+// ==================== IMPOSTOR FUTBOLERO (online, mínimo 4 jugadores) ====================
+const impostorRooms = new Map(); // code -> room
+
+const IMPOSTOR_MIN_PLAYERS = 4;
+const IMPOSTOR_MAX_PLAYERS = 10;
+
+// Palabras extra, además de los jugadores/selecciones/clubes que ya usa el
+// Mentiroso (así el banco es bien grande y bien futbolero).
+const IMPOSTOR_EXTRA_WORDS = [
+  { category: 'Términos', word: 'Offside' },
+  { category: 'Términos', word: 'Tarjeta roja' },
+  { category: 'Términos', word: 'Penal' },
+  { category: 'Términos', word: 'Córner' },
+  { category: 'Términos', word: 'Hat-trick' },
+  { category: 'Términos', word: 'Chilena' },
+  { category: 'Términos', word: 'Caño' },
+  { category: 'Términos', word: 'Túnel' },
+  { category: 'Términos', word: 'Barrida' },
+  { category: 'Términos', word: 'Palomita' },
+  { category: 'Términos', word: 'Tiro libre' },
+  { category: 'Términos', word: 'Arquero' },
+  { category: 'Términos', word: 'Lateral' },
+  { category: 'Términos', word: 'Doble cinco' },
+  { category: 'Jugadas históricas', word: 'La Mano de Dios' },
+  { category: 'Jugadas históricas', word: 'El Gol del Siglo' },
+  { category: 'Jugadas históricas', word: 'El Maracanazo' },
+  { category: 'Estadios', word: 'Camp Nou' },
+  { category: 'Estadios', word: 'Santiago Bernabéu' },
+  { category: 'Estadios', word: 'Maracaná' },
+  { category: 'Estadios', word: 'La Bombonera' },
+  { category: 'Estadios', word: 'Monumental' },
+  { category: 'Estadios', word: 'San Siro' }
+];
+
+function buildImpostorWordBank() {
+  const bank = [];
+  Object.keys(CATEGORIES).forEach(key => {
+    const cat = CATEGORIES[key];
+    cat.items.forEach(item => bank.push({ category: cat.label, word: item.display }));
+  });
+  return bank.concat(IMPOSTOR_EXTRA_WORDS);
+}
+const IMPOSTOR_WORD_BANK = buildImpostorWordBank();
+
+function genImpostorCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code;
+  do {
+    code = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  } while (impostorRooms.has(code));
+  return code;
+}
+
+function connectedImpostorPlayers(room) {
+  return room.players.filter(p => p.connected);
+}
+
+function impostorPublicState(room) {
+  const base = {
+    code: room.code,
+    screen: room.screen,
+    hostId: room.hostId,
+    minPlayers: IMPOSTOR_MIN_PLAYERS,
+    maxPlayers: IMPOSTOR_MAX_PLAYERS,
+    round: room.round,
+    players: room.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      connected: p.connected,
+      voted: room.screen === 'voting' ? !!p.voteFor : false
+    })),
+    chat: room.chat.slice(-200)
+  };
+  if (room.screen === 'results') {
+    const tally = {};
+    room.players.forEach(p => {
+      if (p.voteFor) tally[p.voteFor] = (tally[p.voteFor] || 0) + 1;
+    });
+    let topId = null;
+    let topCount = -1;
+    let tie = false;
+    Object.keys(tally).forEach(id => {
+      if (tally[id] > topCount) {
+        topCount = tally[id];
+        topId = id;
+        tie = false;
+      } else if (tally[id] === topCount) {
+        tie = true;
+      }
+    });
+    const impostorPlayer = room.players.find(p => p.id === room.impostorId);
+    const votedOutImpostor = !tie && topId === room.impostorId;
+    base.reveal = {
+      secret: room.secret,
+      impostorId: room.impostorId,
+      impostorName: impostorPlayer ? impostorPlayer.name : '(desconectado)',
+      votes: room.players.map(p => ({ id: p.id, name: p.name, voteFor: p.voteFor || null })),
+      tally,
+      votedOutId: tie ? null : topId,
+      civilesGanan: votedOutImpostor
+    };
+  }
+  return base;
+}
+
+function broadcastImpostor(room) {
+  io.to(room.code).emit('impostor:state', impostorPublicState(room));
+}
+
+function destroyImpostorRoom(code) {
+  impostorRooms.delete(code);
+}
+
+function startImpostorRound(room) {
+  const entry = IMPOSTOR_WORD_BANK[Math.floor(Math.random() * IMPOSTOR_WORD_BANK.length)];
+  room.secret = entry;
+  const connected = connectedImpostorPlayers(room);
+  const impostor = connected[Math.floor(Math.random() * connected.length)];
+  room.impostorId = impostor.id;
+  room.players.forEach(p => {
+    p.voteFor = null;
+  });
+  room.chat = [];
+  room.round += 1;
+  room.screen = 'discussion';
+
+  room.players.forEach(p => {
+    if (!p.connected) return;
+    const isImpostor = p.id === room.impostorId;
+    io.to(p.id).emit('impostor:your-word', {
+      isImpostor,
+      category: entry.category,
+      word: isImpostor ? null : entry.word
+    });
+  });
+
+  broadcastImpostor(room);
+}
+
+io.on('connection', socket => {
+  socket.on('impostor:create', (payload, cb) => {
+    const name = ((payload && payload.playerName) || 'Jugador').toString().trim().slice(0, 18) || 'Jugador';
+    const code = genImpostorCode();
+    const room = {
+      code,
+      hostId: socket.id,
+      screen: 'lobby',
+      players: [{ id: socket.id, name, connected: true, voteFor: null }],
+      secret: null,
+      impostorId: null,
+      chat: [],
+      round: 0
+    };
+    impostorRooms.set(code, room);
+    socket.join('impostor:' + code);
+    socket.data.impostorRoomCode = code;
+    if (typeof cb === 'function') cb({ ok: true, code, playerId: socket.id });
+    broadcastImpostor(room);
+  });
+
+  socket.on('impostor:join', (payload, cb) => {
+    const code = ((payload && payload.code) || '').toString().trim().toUpperCase();
+    const name = ((payload && payload.playerName) || 'Jugador').toString().trim().slice(0, 18) || 'Jugador';
+    const room = impostorRooms.get(code);
+    if (!room) {
+      if (typeof cb === 'function') cb({ ok: false, error: 'No existe una sala con ese código.' });
+      return;
+    }
+    if (room.screen !== 'lobby') {
+      if (typeof cb === 'function') cb({ ok: false, error: 'Esa partida ya empezó. Esperá a que termine la ronda.' });
+      return;
+    }
+    if (connectedImpostorPlayers(room).length >= IMPOSTOR_MAX_PLAYERS) {
+      if (typeof cb === 'function') cb({ ok: false, error: 'Esa sala ya está completa.' });
+      return;
+    }
+    room.players.push({ id: socket.id, name, connected: true, voteFor: null });
+    socket.join('impostor:' + code);
+    socket.data.impostorRoomCode = code;
+    if (typeof cb === 'function') cb({ ok: true, code, playerId: socket.id });
+    broadcastImpostor(room);
+  });
+
+  function getImpostorRoom() {
+    const code = socket.data.impostorRoomCode;
+    if (!code) return null;
+    return impostorRooms.get(code) || null;
+  }
+
+  socket.on('impostor:start', () => {
+    const room = getImpostorRoom();
+    if (!room || room.screen !== 'lobby') return;
+    if (socket.id !== room.hostId) return;
+    if (connectedImpostorPlayers(room).length < IMPOSTOR_MIN_PLAYERS) return;
+    startImpostorRound(room);
+  });
+
+  socket.on('impostor:chat', payload => {
+    const room = getImpostorRoom();
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || !player.connected) return;
+    const text = ((payload && payload.text) || '').toString().trim().slice(0, 300);
+    if (!text) return;
+    const msg = { playerId: socket.id, name: player.name, text, ts: Date.now() };
+    room.chat.push(msg);
+    if (room.chat.length > 200) room.chat = room.chat.slice(-200);
+    io.to('impostor:' + room.code).emit('impostor:chat-message', msg);
+  });
+
+  socket.on('impostor:startVoting', () => {
+    const room = getImpostorRoom();
+    if (!room || room.screen !== 'discussion') return;
+    if (socket.id !== room.hostId) return;
+    room.players.forEach(p => {
+      p.voteFor = null;
+    });
+    room.screen = 'voting';
+    broadcastImpostor(room);
+  });
+
+  socket.on('impostor:vote', payload => {
+    const room = getImpostorRoom();
+    if (!room || room.screen !== 'voting') return;
+    const voter = room.players.find(p => p.id === socket.id);
+    if (!voter || !voter.connected) return;
+    const targetId = (payload && payload.targetId) || '';
+    const target = room.players.find(p => p.id === targetId && p.connected);
+    if (!target) return;
+    voter.voteFor = targetId;
+
+    const connected = connectedImpostorPlayers(room);
+    const allVoted = connected.every(p => !!p.voteFor);
+    if (allVoted) {
+      room.screen = 'results';
+    }
+    broadcastImpostor(room);
+  });
+
+  socket.on('impostor:playAgain', () => {
+    const room = getImpostorRoom();
+    if (!room || room.screen !== 'results') return;
+    if (socket.id !== room.hostId) return;
+    room.screen = 'lobby';
+    room.secret = null;
+    room.impostorId = null;
+    room.chat = [];
+    room.players.forEach(p => {
+      p.voteFor = null;
+    });
+    broadcastImpostor(room);
+  });
+
+  socket.on('impostor:leave', () => leaveImpostorRoom());
+  socket.on('disconnect', () => leaveImpostorRoom());
+
+  function leaveImpostorRoom() {
+    const room = getImpostorRoom();
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (player) player.connected = false;
+
+    if (room.hostId === socket.id) {
+      const nextHost = connectedImpostorPlayers(room)[0];
+      room.hostId = nextHost ? nextHost.id : null;
+    }
+
+    const stillConnected = connectedImpostorPlayers(room).length;
+    if (stillConnected === 0) {
+      setTimeout(() => {
+        const r = impostorRooms.get(room.code);
+        if (r && connectedImpostorPlayers(r).length === 0) destroyImpostorRoom(room.code);
+      }, 5000);
+    } else {
+      broadcastImpostor(room);
+    }
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log('davismo corriendo en http://localhost:' + PORT);
