@@ -1,5 +1,4 @@
-
- require('dotenv').config();
+require('dotenv').config();
 
 const path = require('path');
 const fs = require('fs');
@@ -675,7 +674,7 @@ function impostorPublicState(room) {
 }
 
 function broadcastImpostor(room) {
-  io.to(room.code).emit('impostor:state', impostorPublicState(room));
+  io.to('impostor:' + room.code).emit('impostor:state', impostorPublicState(room));
 }
 
 function destroyImpostorRoom(code) {
