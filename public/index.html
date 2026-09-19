@@ -2491,6 +2491,7 @@
 
   function ensureSocket(){
     if(socket) return socket;
+    if(typeof io === 'undefined') return null;
     socket = io();
     socket.on('impostor:state', s => {
       const isFirst = !state.serverState;
@@ -2570,29 +2571,57 @@
     el.querySelector('#imp-lobby-submit').addEventListener('click', submitLobbyForm);
   }
 
+  function loadSocketIoThen(cb){
+    if(typeof io !== 'undefined'){ cb(); return; }
+    // El script de conexión en tiempo real todavía no cargó (puede pasar con
+    // conexiones lentas). Lo cargamos nosotros mismos y reintentamos, en vez
+    // de romper con un error en blanco.
+    let tag = document.querySelector('script[data-imp-socketio]');
+    if(!tag){
+      tag = document.createElement('script');
+      tag.src = '/socket.io/socket.io.js';
+      tag.setAttribute('data-imp-socketio', '1');
+      tag.onerror = () => {
+        state.error = 'No se pudo cargar la conexión en tiempo real. Recargá la página (Ctrl+F5) e intentá de nuevo.';
+        render();
+      };
+      document.head.appendChild(tag);
+    }
+    tag.addEventListener('load', cb, { once: true });
+    if(typeof io !== 'undefined') cb(); // por si ya terminó de cargar justo antes de engancharnos
+  }
+
   function submitLobbyForm(){
     const name = state.nameInput.trim();
     if(!name){ state.error = 'Escribí tu nombre.'; render(); return; }
-    ensureSocket();
-    if(state.tab === 'create'){
-      socket.emit('impostor:create', { playerName: name }, res => {
-        if(!res || !res.ok){ state.error = (res && res.error) || 'No se pudo crear la sala.'; render(); return; }
-        state.code = res.code;
-        state.myId = res.playerId;
-        state.myName = name;
+    state.error = '';
+    loadSocketIoThen(() => {
+      const s = ensureSocket();
+      if(!s){
+        state.error = 'No se pudo conectar. Recargá la página (Ctrl+F5) e intentá de nuevo.';
         render();
-      });
-    } else {
-      const code = state.joinCodeInput.trim().toUpperCase();
-      if(!code){ state.error = 'Escribí el código de la sala.'; render(); return; }
-      socket.emit('impostor:join', { code, playerName: name }, res => {
-        if(!res || !res.ok){ state.error = (res && res.error) || 'No se pudo unir a la sala.'; render(); return; }
-        state.code = res.code;
-        state.myId = res.playerId;
-        state.myName = name;
-        render();
-      });
-    }
+        return;
+      }
+      if(state.tab === 'create'){
+        s.emit('impostor:create', { playerName: name }, res => {
+          if(!res || !res.ok){ state.error = (res && res.error) || 'No se pudo crear la sala.'; render(); return; }
+          state.code = res.code;
+          state.myId = res.playerId;
+          state.myName = name;
+          render();
+        });
+      } else {
+        const code = state.joinCodeInput.trim().toUpperCase();
+        if(!code){ state.error = 'Escribí el código de la sala.'; render(); return; }
+        s.emit('impostor:join', { code, playerName: name }, res => {
+          if(!res || !res.ok){ state.error = (res && res.error) || 'No se pudo unir a la sala.'; render(); return; }
+          state.code = res.code;
+          state.myId = res.playerId;
+          state.myName = name;
+          render();
+        });
+      }
+    });
   }
 
   // ---------------- Sala de espera ----------------
