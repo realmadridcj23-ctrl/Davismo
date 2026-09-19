@@ -9,15 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg-void: #06120a;
-    --bg-panel: #0d2015;
-    --bg-panel-2: #12301c;
-    --line: #1f4029;
-    --green-signal: #52ff86;
-    --green-deep: #1f6b3a;
+    --bg-void: #0a130d;
+    --bg-panel: #0e1f15;
+    --bg-panel-2: #16281c;
+    --line: #23402b;
+    --green-signal: #d8a53c;
+    --green-deep: #1c5c34;
     --green-soft: #2e7d46;
-    --text-primary: #eaf6ec;
-    --text-muted: #93b89c;
+    --text-primary: #f3efe2;
+    --text-muted: #a3ac97;
+    --card-red: #d9584a;
+    --card-red-line: #6b332c;
   }
 
   *{ box-sizing: border-box; }
@@ -48,6 +50,16 @@
     width: 100%;
     height: 100%;
     display: block;
+  }
+
+  .pitch-lines{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: var(--green-deep);
+    opacity: 0.35;
+    pointer-events: none;
   }
 
   header{
@@ -294,7 +306,7 @@
   }
   input:focus-visible{ border-color: var(--green-signal); }
   .field-error{
-    color: #ff8a7a;
+    color: var(--card-red);
     font-size: 12.5px;
     margin-top: 6px;
     min-height: 16px;
@@ -306,8 +318,8 @@
     display: none;
   }
   #registro-msg.show{ display: block; }
-  #registro-msg.ok{ background: rgba(82,255,134,0.1); color: var(--green-signal); border: 1px solid var(--green-deep); }
-  #registro-msg.err{ background: rgba(255,138,122,0.1); color: #ff8a7a; border: 1px solid #7a3a32; }
+  #registro-msg.ok{ background: rgba(216,165,60,0.1); color: var(--green-signal); border: 1px solid var(--green-deep); }
+  #registro-msg.err{ background: rgba(217,88,74,0.1); color: var(--card-red); border: 1px solid var(--card-red-line); }
 
   .members-panel{
     border-top: 1px solid var(--line);
@@ -353,7 +365,7 @@
   /* ---------- ASISTENTE (IA de davismo) ---------- */
   .assistant-head{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
   .assistant-avatar{
-    width:40px; height:40px; border-radius:50%; background: rgba(82,255,134,0.12);
+    width:40px; height:40px; border-radius:50%; background: rgba(216,165,60,0.12);
     border:1px solid var(--green-deep); display:flex; align-items:center; justify-content:center;
     font-family:'Chakra Petch',sans-serif; font-weight:700; color: var(--green-signal); flex-shrink:0;
   }
@@ -380,7 +392,7 @@
   .chat-bubble.bot{ align-self:flex-start; background: var(--bg-panel-2); border:1px solid var(--line); color: var(--text-primary); }
   .chat-bubble.user{ align-self:flex-end; background: var(--green-signal); color:#06280f; font-weight:500; }
   .chat-bubble.bot.ok{ border-color: var(--green-deep); }
-  .chat-bubble.bot.bad{ border-color: #7a3a32; }
+  .chat-bubble.bot.bad{ border-color: var(--card-red-line); }
   .chat-bubble.bot.thinking{ color: var(--text-muted); font-style: italic; }
   .chat-bubble .match-list{ margin: 6px 0 0 0; padding-left: 18px; }
   .chat-bubble .match-list li{ margin-bottom: 2px; }
@@ -401,7 +413,7 @@
   .mgame-setup .cat-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px; margin-bottom:22px; }
   .mgame-setup .cat-card{ background: var(--bg-void); border:1px solid var(--line); border-radius:8px; padding:16px; cursor:pointer; transition: border-color .15s ease, background .15s ease; }
   .mgame-setup .cat-card:hover{ border-color: var(--green-deep); }
-  .mgame-setup .cat-card.selected{ border-color: var(--green-signal); background: rgba(82,255,134,0.07); }
+  .mgame-setup .cat-card.selected{ border-color: var(--green-signal); background: rgba(216,165,60,0.07); }
   .mgame-setup .cat-card h4{ margin:0 0 6px 0; font-family:'Chakra Petch',sans-serif; font-size:15px; }
   .mgame-setup .cat-card p{ margin:0; color: var(--text-muted); font-size:12.5px; line-height:1.4; }
   .mgame-setup .cat-card .count{ display:inline-block; margin-top:8px; font-size:11px; color: var(--green-signal); font-family:'Chakra Petch',sans-serif; }
@@ -418,7 +430,7 @@
   .mgame-presets button{ background:transparent; border:1px solid var(--line); color:var(--text-muted); padding:6px 12px; border-radius:5px; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; }
   .mgame-presets button.active, .mgame-presets button:hover{ border-color: var(--green-signal); color: var(--green-signal); }
 
-  .mgame-error{ color:#ff8a7a; font-size:12.5px; margin: -10px 0 16px 0; min-height:16px; }
+  .mgame-error{ color:var(--card-red); font-size:12.5px; margin: -10px 0 16px 0; min-height:16px; }
 
   .mgame-turn-banner{ text-align:center; margin-bottom:18px; }
   .mgame-turn-banner .whoturn{ font-family:'Chakra Petch',sans-serif; font-size:22px; font-weight:700; color: var(--green-signal); margin-bottom:4px; }
@@ -448,17 +460,17 @@
   .mgame-answer-input input:focus-visible{ border-color: var(--green-signal); }
 
   .mgame-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; min-height: 34px; }
-  .mgame-chip{ background: rgba(82,255,134,0.1); border:1px solid var(--green-deep); color: var(--green-signal); padding:6px 12px; border-radius:20px; font-size:12.5px; }
+  .mgame-chip{ background: rgba(216,165,60,0.1); border:1px solid var(--green-deep); color: var(--green-signal); padding:6px 12px; border-radius:20px; font-size:12.5px; }
 
   .mgame-feedback{ text-align:center; font-size:14px; padding:10px; border-radius:6px; margin-bottom:14px; min-height:20px; }
-  .mgame-feedback.err{ background: rgba(255,138,122,0.1); color:#ff8a7a; border:1px solid #7a3a32; }
-  .mgame-feedback.ok{ background: rgba(82,255,134,0.1); color: var(--green-signal); border:1px solid var(--green-deep); }
+  .mgame-feedback.err{ background: rgba(217,88,74,0.1); color:var(--card-red); border:1px solid var(--card-red-line); }
+  .mgame-feedback.ok{ background: rgba(216,165,60,0.1); color: var(--green-signal); border:1px solid var(--green-deep); }
 
   .mgame-result{ text-align:center; }
   .mgame-result .winner{ font-family:'Chakra Petch',sans-serif; font-size:30px; font-weight:700; color: var(--green-signal); margin-bottom:10px; }
   .mgame-result .desc{ color: var(--text-muted); font-size:14px; margin-bottom:22px; line-height:1.6; }
   .joke-note{ display:inline-block; margin-top:8px; color: var(--green-signal); font-size:13px; }
-  .mgame-result .missing{ color: #ff8a7a; }
+  .mgame-result .missing{ color: var(--card-red); }
   .mgame-score{ display:flex; justify-content:center; gap:28px; margin-bottom:26px; }
   .mgame-score div{ text-align:center; }
   .mgame-score .n{ font-family:'Chakra Petch',sans-serif; font-size:26px; font-weight:700; }
@@ -478,8 +490,8 @@
   .trivia-options{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px; margin-bottom:18px; }
   .trivia-option{ background: var(--bg-void); border:1px solid var(--line); border-radius:8px; padding:16px; cursor:pointer; text-align:left; font-size:14.5px; color: var(--text-primary); transition: border-color .15s ease, background .15s ease; font-family:'Inter',sans-serif; }
   .trivia-option:hover:not(:disabled){ border-color: var(--green-deep); }
-  .trivia-option.correct{ border-color: var(--green-signal); background: rgba(82,255,134,0.1); color: var(--green-signal); }
-  .trivia-option.incorrect{ border-color: #7a3a32; background: rgba(255,138,122,0.1); color:#ff8a7a; }
+  .trivia-option.correct{ border-color: var(--green-signal); background: rgba(216,165,60,0.1); color: var(--green-signal); }
+  .trivia-option.incorrect{ border-color: var(--card-red-line); background: rgba(217,88,74,0.1); color:var(--card-red); }
   .trivia-option:disabled{ cursor: default; opacity: 0.75; }
   .trivia-next-row{ text-align:center; }
   .trivia-result{ text-align:center; }
@@ -535,15 +547,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 28px rgba(82,255,134,0.28);
+    box-shadow: 0 10px 28px rgba(216,165,60,0.28);
     animation: assistant-fab-pulse 2.6s ease-in-out infinite;
     transition: transform .15s ease;
   }
   .assistant-fab:hover{ transform: scale(1.06); }
   .assistant-fab-icon{ font-size: 26px; line-height: 1; }
   @keyframes assistant-fab-pulse{
-    0%, 100%{ box-shadow: 0 10px 28px rgba(82,255,134,0.28); }
-    50%{ box-shadow: 0 10px 34px rgba(82,255,134,0.5); }
+    0%, 100%{ box-shadow: 0 10px 28px rgba(216,165,60,0.28); }
+    50%{ box-shadow: 0 10px 34px rgba(216,165,60,0.5); }
   }
   .assistant-fab-bubble{
     background: var(--bg-panel-2);
@@ -590,7 +602,7 @@
   .mgame-players-online{ display:flex; justify-content:center; gap:10px; font-size:13px; color: var(--text-muted); margin-bottom:18px; flex-wrap:wrap; }
   .mgame-players-online span{ background: var(--bg-void); border:1px solid var(--line); padding:6px 12px; border-radius:20px; }
   .mgame-players-online span.me{ border-color: var(--green-deep); color: var(--green-signal); }
-  .mgame-players-online span.off{ color: #ff8a7a; border-color: #7a3a32; }
+  .mgame-players-online span.off{ color: var(--card-red); border-color: var(--card-red-line); }
 
   @media (max-width: 640px){
     .games-grid{ grid-template-columns: 1fr; }
@@ -604,6 +616,11 @@
 <body>
 
 <div class="stage">
+  <svg class="pitch-lines" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <circle cx="500" cy="500" r="230" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="500" cy="500" r="6" fill="currentColor"/>
+    <line x1="0" y1="500" x2="1000" y2="500" stroke="currentColor" stroke-width="2"/>
+  </svg>
   <canvas id="bg-canvas"></canvas>
 
   <header>
@@ -814,8 +831,8 @@
 
     if(mouse.x !== null){
       const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 260);
-      grad.addColorStop(0, 'rgba(82,255,134,0.10)');
-      grad.addColorStop(1, 'rgba(82,255,134,0)');
+      grad.addColorStop(0, 'rgba(216,165,60,0.10)');
+      grad.addColorStop(1, 'rgba(216,165,60,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
     }
@@ -840,7 +857,7 @@
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(234,246,236,0.85)';
+      ctx.fillStyle = 'rgba(243,239,226,0.85)';
       ctx.fill();
     }
 
@@ -853,7 +870,7 @@
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = 'rgba(82,255,134,' + (1 - dist/130) * 0.35 + ')';
+          ctx.strokeStyle = 'rgba(216,165,60,' + (1 - dist/130) * 0.35 + ')';
           ctx.lineWidth = 1;
           ctx.stroke();
         }
