@@ -554,6 +554,49 @@
     .imp-chat-col{ height: 300px; }
   }
 
+  /* ---- Apelación de baneo ---- */
+  .apel-warning{
+    background: rgba(217,88,74,0.1);
+    border: 1px solid var(--card-red-line);
+    color: var(--card-red);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+  .apel-form{ max-width: 520px; margin: 0 auto; }
+  .apel-form label{ display:block; font-size:12.5px; color: var(--text-muted); margin-bottom:6px; margin-top:16px; }
+  .apel-form label:first-of-type{ margin-top:0; }
+  .apel-form input, .apel-form textarea{
+    width:100%; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:11px 13px;
+    color: var(--text-primary); font-size:14px; font-family:'Inter',sans-serif; outline:none; resize: vertical;
+  }
+  .apel-form textarea{ min-height: 90px; }
+  .apel-form input:focus-visible, .apel-form textarea:focus-visible{ border-color: var(--green-signal); }
+  .apel-form .imp-actions{ margin-top: 22px; }
+  .apel-success{ text-align:center; padding: 30px 10px; }
+  .apel-success .big{ font-family:'Chakra Petch',sans-serif; font-size:22px; color: var(--green-signal); margin-bottom:10px; }
+
+  /* ---- Panel admin ---- */
+  .admin-gate{ max-width: 340px; margin: 0 auto; text-align:center; }
+  .admin-gate input{
+    width:100%; background: var(--bg-void); border:1px solid var(--line); border-radius:6px; padding:11px 13px;
+    color: var(--text-primary); font-size:14px; font-family:'Inter',sans-serif; outline:none; margin-bottom:14px;
+  }
+  .admin-list{ display:flex; flex-direction:column; gap:14px; }
+  .admin-card{ background: var(--bg-void); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+  .admin-card .top-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+  .admin-card .user{ font-family:'Chakra Petch',sans-serif; font-size:16px; color: var(--green-signal); }
+  .admin-card .date{ font-size:11.5px; color: var(--text-muted); }
+  .admin-card .field-label{ font-size:11.5px; color: var(--text-muted); margin-top:10px; margin-bottom:3px; text-transform:none; }
+  .admin-card .field-value{ font-size:13.5px; line-height:1.5; white-space: pre-wrap; }
+  .admin-card .status-select{ background: var(--bg-panel-2); border:1px solid var(--line); color: var(--text-primary); border-radius:6px; padding:6px 10px; font-size:12.5px; font-family:'Inter',sans-serif; }
+  .admin-card .bottom-row{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+  .admin-card .del-btn{ background:transparent; border:1px solid var(--card-red-line); color: var(--card-red); border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; }
+  .admin-empty{ text-align:center; color: var(--text-muted); padding: 30px 0; }
+
   /* ---------- TOAST ---------- */
   .toast{
     position: fixed;
@@ -683,6 +726,7 @@
       <li><button type="button" data-open="asistente">Asistente</button></li>
       <li><button type="button" data-open="discord">Discord</button></li>
       <li><button type="button" data-open="registro">Registro</button></li>
+      <li><button type="button" data-open="apelacion">Apelar baneo</button></li>
     </ul>
   </header>
 
@@ -863,6 +907,30 @@
   </div>
 </div>
 
+<!-- ---------- APELACIÓN DE BANEO OVERLAY (público) ---------- -->
+<div class="overlay" id="overlay-apelacion" aria-hidden="true">
+  <div class="overlay-panel wide">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Apelar un baneo</h2>
+      <p>Contanos tu caso. Esto lo revisa directamente el equipo de davismo.</p>
+    </div>
+    <div id="apelacion-root"></div>
+  </div>
+</div>
+
+<!-- ---------- PANEL ADMIN OVERLAY (privado) ---------- -->
+<div class="overlay" id="overlay-admin" aria-hidden="true">
+  <div class="overlay-panel wide">
+    <button type="button" class="overlay-close" data-close>&times;</button>
+    <div class="overlay-head">
+      <h2>Panel privado</h2>
+      <p>Apelaciones de baneo recibidas.</p>
+    </div>
+    <div id="admin-root"></div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ---------------- Interactive green background ----------------
@@ -966,7 +1034,9 @@
     mentiroso: document.getElementById('overlay-mentiroso'),
     asistente: document.getElementById('overlay-asistente'),
     trivia: document.getElementById('overlay-trivia'),
-    impostor: document.getElementById('overlay-impostor')
+    impostor: document.getElementById('overlay-impostor'),
+    apelacion: document.getElementById('overlay-apelacion'),
+    admin: document.getElementById('overlay-admin')
   };
 
   function openOverlay(name){
@@ -978,6 +1048,8 @@
     if(name === 'asistente' && window.DavismoAsistente){ window.DavismoAsistente.onOpen(); }
     if(name === 'trivia' && window.TriviaGame){ window.TriviaGame.render(); }
     if(name === 'impostor' && window.ImpostorGame){ window.ImpostorGame.render(); }
+    if(name === 'apelacion' && window.ApelacionForm){ window.ApelacionForm.render(); }
+    if(name === 'admin' && window.AdminPanel){ window.AdminPanel.render(); }
   }
   function closeOverlay(el){
     el.classList.remove('open');
@@ -995,6 +1067,21 @@
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => closeOverlay(btn.closest('.overlay')));
   });
+
+  // Acceso al panel privado: no hay ningún botón ni link visible en la página.
+  // Solo se abre entrando a esta web con #panel-davismo-27x al final de la URL,
+  // por ejemplo: https://tusitio.com/#panel-davismo-27x
+  // Cambiá ese texto por el que quieras (y no lo compartas con nadie) editando
+  // la constante ADMIN_HASH acá abajo.
+  const ADMIN_HASH = '#panel-davismo-27x';
+  function checkAdminHash(){
+    if(window.location.hash === ADMIN_HASH){
+      openOverlay('admin');
+    }
+  }
+  checkAdminHash();
+  window.addEventListener('hashchange', checkAdminHash);
+
   Object.values(overlays).forEach(el => {
     el.addEventListener('click', (e) => { if(e.target === el) closeOverlay(el); });
   });
@@ -2777,6 +2864,306 @@
   }
 
   window.ImpostorGame = { render, pause };
+})();
+</script>
+
+<script>
+// ---------------- Apelación de baneo (público) ----------------
+(function(){
+  const root = () => document.getElementById('apelacion-root');
+
+  const state = {
+    submitting: false,
+    error: '',
+    success: false,
+    fields: { discordUser: '', contact: '', banReason: '', appealText: '' }
+  };
+
+  function esc(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function render(){
+    const el = root();
+    if(!el) return;
+    if(state.success) return renderSuccess(el);
+    renderForm(el);
+  }
+
+  function renderForm(el){
+    el.innerHTML = `
+      <div class="apel-warning">
+        Respondé con total conciencia y honestidad. Esto lo revisa una persona real del equipo:
+        cualquier dato falso o intento de manipular la historia va a jugar en tu contra y va a
+        empeorar tu caso en una magnitud extrema, no a mejorarlo.
+      </div>
+      <div class="apel-form">
+        <label for="apel-discord">Tu usuario de Discord *</label>
+        <input type="text" id="apel-discord" placeholder="usuario#0000 o @usuario" value="${esc(state.fields.discordUser)}">
+
+        <label for="apel-contact">Otro contacto (opcional, por si no podemos escribirte por Discord)</label>
+        <input type="text" id="apel-contact" placeholder="Email, Instagram, etc." value="${esc(state.fields.contact)}">
+
+        <label for="apel-reason">¿Por qué creés que te banearon? *</label>
+        <textarea id="apel-reason" placeholder="Explicá con el mayor detalle posible qué pasó, según vos.">${esc(state.fields.banReason)}</textarea>
+
+        <label for="apel-appeal">Tu apelación: ¿por qué deberíamos desbanearte? *</label>
+        <textarea id="apel-appeal" placeholder="Explicá tu caso, qué cambiarías, y por qué merecés otra oportunidad.">${esc(state.fields.appealText)}</textarea>
+
+        <div class="mgame-error">${esc(state.error)}</div>
+        <div class="imp-actions">
+          <button type="button" class="btn btn-solid" id="apel-submit-btn" ${state.submitting ? 'disabled' : ''}>${state.submitting ? 'Enviando...' : 'Enviar apelación'}</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('#apel-discord').addEventListener('input', e => state.fields.discordUser = e.target.value);
+    el.querySelector('#apel-contact').addEventListener('input', e => state.fields.contact = e.target.value);
+    el.querySelector('#apel-reason').addEventListener('input', e => state.fields.banReason = e.target.value);
+    el.querySelector('#apel-appeal').addEventListener('input', e => state.fields.appealText = e.target.value);
+    el.querySelector('#apel-submit-btn').addEventListener('click', submit);
+  }
+
+  function renderSuccess(el){
+    el.innerHTML = `
+      <div class="apel-success">
+        <div class="big">Apelación enviada</div>
+        <p class="imp-hint">La recibimos y la va a revisar el equipo de davismo. No hace falta que la reenvíes.</p>
+        <div class="imp-actions" style="margin-top:20px;">
+          <button type="button" class="btn btn-outline" id="apel-new-btn">Enviar otra apelación</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('#apel-new-btn').addEventListener('click', () => {
+      state.success = false;
+      state.fields = { discordUser: '', contact: '', banReason: '', appealText: '' };
+      render();
+    });
+  }
+
+  async function submit(){
+    const f = state.fields;
+    if(!f.discordUser.trim() || !f.banReason.trim() || !f.appealText.trim()){
+      state.error = 'Completá tu usuario de Discord, por qué te banearon y tu apelación.';
+      render();
+      return;
+    }
+    state.submitting = true;
+    state.error = '';
+    render();
+    try{
+      const res = await fetch('/api/apelaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(f)
+      });
+      const data = await res.json();
+      if(!res.ok || !data.ok){
+        throw new Error((data && data.error) || 'No se pudo enviar la apelación.');
+      }
+      state.success = true;
+    }catch(e){
+      state.error = e.message || 'No se pudo conectar con el servidor. Probá de nuevo.';
+    }finally{
+      state.submitting = false;
+      render();
+    }
+  }
+
+  window.ApelacionForm = { render };
+})();
+</script>
+
+<script>
+// ---------------- Panel admin (privado, protegido con clave) ----------------
+(function(){
+  const root = () => document.getElementById('admin-root');
+  const STORAGE_KEY = 'davismo_admin_key';
+
+  const state = {
+    authed: false,
+    key: '',
+    keyInput: '',
+    appeals: [],
+    loading: false,
+    error: ''
+  };
+
+  function esc(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  function render(){
+    const el = root();
+    if(!el) return;
+    if(!state.authed){
+      // Si ya nos autenticamos antes en esta pestaña, lo intentamos de nuevo solos.
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if(saved && !state.loading){
+        state.key = saved;
+        tryLogin(true);
+        return;
+      }
+      return renderGate(el);
+    }
+    renderList(el);
+  }
+
+  function renderGate(el){
+    el.innerHTML = `
+      <div class="admin-gate">
+        <input type="password" id="admin-key-input" placeholder="Clave de admin" value="${esc(state.keyInput)}">
+        <div class="mgame-error">${esc(state.error)}</div>
+        <button type="button" class="btn btn-solid" id="admin-login-btn" ${state.loading ? 'disabled' : ''}>${state.loading ? 'Verificando...' : 'Entrar'}</button>
+      </div>
+    `;
+    const input = el.querySelector('#admin-key-input');
+    input.addEventListener('input', e => state.keyInput = e.target.value);
+    input.addEventListener('keydown', e => { if(e.key === 'Enter'){ state.key = state.keyInput; tryLogin(false); } });
+    el.querySelector('#admin-login-btn').addEventListener('click', () => { state.key = state.keyInput; tryLogin(false); });
+  }
+
+  async function tryLogin(silent){
+    state.loading = true;
+    if(!silent) render();
+    try{
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: state.key })
+      });
+      const data = await res.json();
+      if(!res.ok || !data.ok){
+        sessionStorage.removeItem(STORAGE_KEY);
+        state.authed = false;
+        state.error = (data && data.error) || 'No se pudo verificar la clave.';
+        state.loading = false;
+        render();
+        return;
+      }
+      sessionStorage.setItem(STORAGE_KEY, state.key);
+      state.authed = true;
+      state.error = '';
+      await fetchAppeals();
+    }catch(e){
+      state.error = 'No se pudo conectar con el servidor.';
+      state.loading = false;
+      render();
+    }
+  }
+
+  async function fetchAppeals(){
+    state.loading = true;
+    render();
+    try{
+      const res = await fetch('/api/apelaciones', { headers: { 'x-admin-key': state.key } });
+      const data = await res.json();
+      if(!res.ok || !data.ok){
+        throw new Error((data && data.error) || 'No se pudieron cargar las apelaciones.');
+      }
+      state.appeals = data.appeals || [];
+      state.error = '';
+    }catch(e){
+      state.error = e.message || 'No se pudo conectar con el servidor.';
+    }finally{
+      state.loading = false;
+      render();
+    }
+  }
+
+  function fmtDate(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }catch(e){ return iso; }
+  }
+
+  function renderList(el){
+    if(state.loading && !state.appeals.length){
+      el.innerHTML = '<p class="imp-hint">Cargando...</p>';
+      return;
+    }
+    if(!state.appeals.length){
+      el.innerHTML = `
+        <div class="admin-empty">No hay apelaciones todavía.</div>
+        <div class="imp-actions"><button type="button" class="btn btn-outline" id="admin-logout-btn">Cerrar sesión</button></div>
+      `;
+      el.querySelector('#admin-logout-btn').addEventListener('click', logout);
+      return;
+    }
+    el.innerHTML = `
+      <div class="mgame-error">${esc(state.error)}</div>
+      <div class="admin-list">
+        ${state.appeals.map(a => `
+          <div class="admin-card" data-id="${esc(a.id)}">
+            <div class="top-row">
+              <span class="user">${esc(a.discordUser)}</span>
+              <span class="date">${esc(fmtDate(a.createdAt))}</span>
+            </div>
+            ${a.contact ? `<div class="field-label">Contacto extra</div><div class="field-value">${esc(a.contact)}</div>` : ''}
+            <div class="field-label">Por qué cree que lo banearon</div>
+            <div class="field-value">${esc(a.banReason)}</div>
+            <div class="field-label">Apelación</div>
+            <div class="field-value">${esc(a.appealText)}</div>
+            <div class="bottom-row">
+              <select class="status-select" data-id="${esc(a.id)}">
+                <option value="pendiente" ${a.status === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                <option value="aprobada" ${a.status === 'aprobada' ? 'selected' : ''}>Aprobada</option>
+                <option value="rechazada" ${a.status === 'rechazada' ? 'selected' : ''}>Rechazada</option>
+              </select>
+              <button type="button" class="del-btn" data-id="${esc(a.id)}">Eliminar</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="imp-actions" style="margin-top:18px;"><button type="button" class="btn btn-outline" id="admin-logout-btn">Cerrar sesión</button></div>
+    `;
+    el.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', () => updateStatus(sel.getAttribute('data-id'), sel.value));
+    });
+    el.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteAppeal(btn.getAttribute('data-id')));
+    });
+    el.querySelector('#admin-logout-btn').addEventListener('click', logout);
+  }
+
+  async function updateStatus(id, status){
+    try{
+      await fetch('/api/apelaciones/' + encodeURIComponent(id) + '/estado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': state.key },
+        body: JSON.stringify({ status })
+      });
+      const item = state.appeals.find(a => a.id === id);
+      if(item) item.status = status;
+    }catch(e){ /* silencioso, no es crítico */ }
+  }
+
+  async function deleteAppeal(id){
+    if(!confirm('¿Eliminar esta apelación?')) return;
+    try{
+      await fetch('/api/apelaciones/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'x-admin-key': state.key }
+      });
+      state.appeals = state.appeals.filter(a => a.id !== id);
+      render();
+    }catch(e){ /* silencioso */ }
+  }
+
+  function logout(){
+    sessionStorage.removeItem(STORAGE_KEY);
+    state.authed = false;
+    state.key = '';
+    state.keyInput = '';
+    state.appeals = [];
+    render();
+  }
+
+  window.AdminPanel = { render };
 })();
 </script>
 

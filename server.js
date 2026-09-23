@@ -15,9 +15,11 @@ const io = new Server(server);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const APPEALS_FILE = path.join(DATA_DIR, 'apelaciones.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
+if (!fs.existsSync(APPEALS_FILE)) fs.writeFileSync(APPEALS_FILE, '[]');
 
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
@@ -162,6 +164,97 @@ app.post('/api/registro', (req, res) => {
 app.get('/api/miembros', (req, res) => {
   const users = readUsers();
   res.json({ members: users.map(u => u.username) });
+});
+
+// ==================== APELACIONES DE BANEO ====================
+// Formulario público (cualquiera puede enviar una apelación) + panel privado
+// solo para el dueño del sitio (protegido con la variable de entorno ADMIN_KEY).
+function readAppeals() {
+  try {
+    return JSON.parse(fs.readFileSync(APPEALS_FILE, 'utf8'));
+  } catch (e) {
+    return [];
+  }
+}
+function writeAppeals(list) {
+  fs.writeFileSync(APPEALS_FILE, JSON.stringify(list, null, 2));
+}
+
+// Envío público de una apelación.
+app.post('/api/apelaciones', (req, res) => {
+  const body = req.body || {};
+  const discordUser = (body.discordUser || '').toString().trim().slice(0, 60);
+  const banReason = (body.banReason || '').toString().trim().slice(0, 800);
+  const appealText = (body.appealText || '').toString().trim().slice(0, 3000);
+  const contact = (body.contact || '').toString().trim().slice(0, 120);
+
+  if (!discordUser || !banReason || !appealText) {
+    return res.status(400).json({ ok: false, error: 'Completá tu usuario de Discord, por qué te banearon y tu apelación.' });
+  }
+
+  const list = readAppeals();
+  const appeal = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+    discordUser,
+    contact,
+    banReason,
+    appealText,
+    status: 'pendiente',
+    createdAt: new Date().toISOString()
+  };
+  list.unshift(appeal);
+  writeAppeals(list);
+  res.json({ ok: true, id: appeal.id });
+});
+
+// Todo lo de acá abajo es solo para el dueño del sitio: requiere la clave
+// ADMIN_KEY (variable de entorno), que solo vos conocés.
+function checkAdminKey(req, res) {
+  if (!process.env.ADMIN_KEY) {
+    res.status(503).json({
+      ok: false,
+      error: 'El panel de admin todavía no está configurado en el servidor. Definí la variable de entorno ADMIN_KEY.'
+    });
+    return false;
+  }
+  const key = req.headers['x-admin-key'] || (req.body && req.body.key) || (req.query && req.query.key) || '';
+  if (key !== process.env.ADMIN_KEY) {
+    res.status(401).json({ ok: false, error: 'Clave de admin incorrecta.' });
+    return false;
+  }
+  return true;
+}
+
+// El panel llama primero acá solo para validar la clave sin traer todavía la lista.
+app.post('/api/admin/login', (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  res.json({ ok: true });
+});
+
+app.get('/api/apelaciones', (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  const list = readAppeals();
+  res.json({ ok: true, appeals: list });
+});
+
+app.post('/api/apelaciones/:id/estado', (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  const { id } = req.params;
+  const status = (req.body && req.body.status) || 'pendiente';
+  const list = readAppeals();
+  const item = list.find(a => a.id === id);
+  if (!item) return res.status(404).json({ ok: false, error: 'No se encontró esa apelación.' });
+  item.status = status;
+  writeAppeals(list);
+  res.json({ ok: true });
+});
+
+app.delete('/api/apelaciones/:id', (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  const { id } = req.params;
+  const list = readAppeals().filter(a => a.id !== id);
+  writeAppeals(list);
+  res.json({ ok: true });
 });
 
 // ==================== TRIVIA NIVEL LEYENDA ====================
@@ -709,46 +802,56 @@ function startImpostorRound(room) {
 
 io.on('connection', socket => {
   socket.on('impostor:create', (payload, cb) => {
-    const name = ((payload && payload.playerName) || 'Jugador').toString().trim().slice(0, 18) || 'Jugador';
-    const code = genImpostorCode();
-    const room = {
-      code,
-      hostId: socket.id,
-      screen: 'lobby',
-      players: [{ id: socket.id, name, connected: true, voteFor: null }],
-      secret: null,
-      impostorId: null,
-      chat: [],
-      round: 0
-    };
-    impostorRooms.set(code, room);
-    socket.join('impostor:' + code);
-    socket.data.impostorRoomCode = code;
-    if (typeof cb === 'function') cb({ ok: true, code, playerId: socket.id });
-    broadcastImpostor(room);
+    try {
+      const name = ((payload && payload.playerName) || 'Jugador').toString().trim().slice(0, 18) || 'Jugador';
+      const code = genImpostorCode();
+      const room = {
+        code,
+        hostId: socket.id,
+        screen: 'lobby',
+        players: [{ id: socket.id, name, connected: true, voteFor: null }],
+        secret: null,
+        impostorId: null,
+        chat: [],
+        round: 0
+      };
+      impostorRooms.set(code, room);
+      socket.join('impostor:' + code);
+      socket.data.impostorRoomCode = code;
+      broadcastImpostor(room);
+      if (typeof cb === 'function') cb({ ok: true, code, playerId: socket.id, state: impostorPublicState(room) });
+    } catch (e) {
+      console.error('Error en impostor:create:', e);
+      if (typeof cb === 'function') cb({ ok: false, error: 'Error interno del servidor al crear la sala: ' + e.message });
+    }
   });
 
   socket.on('impostor:join', (payload, cb) => {
-    const code = ((payload && payload.code) || '').toString().trim().toUpperCase();
-    const name = ((payload && payload.playerName) || 'Jugador').toString().trim().slice(0, 18) || 'Jugador';
-    const room = impostorRooms.get(code);
-    if (!room) {
-      if (typeof cb === 'function') cb({ ok: false, error: 'No existe una sala con ese código.' });
-      return;
+    try {
+      const code = ((payload && payload.code) || '').toString().trim().toUpperCase();
+      const name = ((payload && payload.playerName) || 'Jugador').toString().trim().slice(0, 18) || 'Jugador';
+      const room = impostorRooms.get(code);
+      if (!room) {
+        if (typeof cb === 'function') cb({ ok: false, error: 'No existe una sala con ese código.' });
+        return;
+      }
+      if (room.screen !== 'lobby') {
+        if (typeof cb === 'function') cb({ ok: false, error: 'Esa partida ya empezó. Esperá a que termine la ronda.' });
+        return;
+      }
+      if (connectedImpostorPlayers(room).length >= IMPOSTOR_MAX_PLAYERS) {
+        if (typeof cb === 'function') cb({ ok: false, error: 'Esa sala ya está completa.' });
+        return;
+      }
+      room.players.push({ id: socket.id, name, connected: true, voteFor: null });
+      socket.join('impostor:' + code);
+      socket.data.impostorRoomCode = code;
+      broadcastImpostor(room);
+      if (typeof cb === 'function') cb({ ok: true, code, playerId: socket.id, state: impostorPublicState(room) });
+    } catch (e) {
+      console.error('Error en impostor:join:', e);
+      if (typeof cb === 'function') cb({ ok: false, error: 'Error interno del servidor al unirse a la sala: ' + e.message });
     }
-    if (room.screen !== 'lobby') {
-      if (typeof cb === 'function') cb({ ok: false, error: 'Esa partida ya empezó. Esperá a que termine la ronda.' });
-      return;
-    }
-    if (connectedImpostorPlayers(room).length >= IMPOSTOR_MAX_PLAYERS) {
-      if (typeof cb === 'function') cb({ ok: false, error: 'Esa sala ya está completa.' });
-      return;
-    }
-    room.players.push({ id: socket.id, name, connected: true, voteFor: null });
-    socket.join('impostor:' + code);
-    socket.data.impostorRoomCode = code;
-    if (typeof cb === 'function') cb({ ok: true, code, playerId: socket.id });
-    broadcastImpostor(room);
   });
 
   function getImpostorRoom() {
