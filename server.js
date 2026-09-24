@@ -161,9 +161,13 @@ app.post('/api/registro', (req, res) => {
   res.json({ ok: true, username });
 });
 
+// Lista de miembros: ahora es privada, solo para el dueño del sitio (misma
+// clave ADMIN_KEY que el panel de apelaciones). Los usuarios ya NO pueden
+// ver quién más está registrado.
 app.get('/api/miembros', (req, res) => {
+  if (!checkAdminKey(req, res)) return;
   const users = readUsers();
-  res.json({ members: users.map(u => u.username) });
+  res.json({ ok: true, members: users.map(u => ({ username: u.username, email: u.email, createdAt: u.createdAt })) });
 });
 
 // ==================== APELACIONES DE BANEO ====================

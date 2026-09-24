@@ -80,6 +80,8 @@
     text-decoration: none;
   }
   .logo span{ color: var(--green-signal); }
+  .logo-col{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .user-greeting{ font-size: 12px; color: var(--green-signal); font-family:'Inter',sans-serif; }
   .nav-links{
     display: flex;
     gap: 10px;
@@ -720,7 +722,10 @@
   <canvas id="bg-canvas"></canvas>
 
   <header>
-    <a href="#" class="logo">davis<span>mo</span></a>
+    <div class="logo-col">
+      <a href="#" class="logo">davis<span>mo</span></a>
+      <span id="user-greeting" class="user-greeting" style="display:none;"></span>
+    </div>
     <ul class="nav-links">
       <li><button type="button" data-open="juegos">Juegos</button></li>
       <li><button type="button" data-open="asistente">Asistente</button></li>
@@ -826,13 +831,6 @@
       <button type="submit" class="btn btn-solid">Crear cuenta</button>
       <div id="registro-msg"></div>
     </form>
-
-    <div class="members-panel">
-      <h3>Miembros registrados</h3>
-      <p class="sub">Solo se muestra el nombre de usuario, nunca el correo.</p>
-      <ul id="members-list"></ul>
-      <p id="members-empty">Todavía no hay nadie registrado. ¡Sé el primero!</p>
-    </div>
   </div>
 </div>
 
@@ -1079,7 +1077,10 @@
       openOverlay('admin');
     }
   }
-  checkAdminHash();
+  // 'load' se dispara recién cuando TODO terminó de cargar (incluidos los
+  // scripts de más abajo, como el del panel admin), así evitamos que se
+  // abra el overlay antes de que exista window.AdminPanel.
+  window.addEventListener('load', checkAdminHash);
   window.addEventListener('hashchange', checkAdminHash);
 
   Object.values(overlays).forEach(el => {
@@ -1129,42 +1130,27 @@
   const usernameError = document.getElementById('username-error');
   const emailError = document.getElementById('email-error');
   const msg = document.getElementById('registro-msg');
-  const listEl = document.getElementById('members-list');
-  const emptyEl = document.getElementById('members-empty');
   const submitBtn = form.querySelector('button[type="submit"]');
+  const LOCAL_KEY = 'davismo_username';
 
   function showMsg(text, type){
     msg.textContent = text;
     msg.className = 'show ' + type;
   }
 
-  function escapeHtml(str){
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  async function loadMembers(){
-    try{
-      const res = await fetch('/api/miembros');
-      if(!res.ok) throw new Error('bad status');
-      const data = await res.json();
-      const items = data.members || [];
-      if(items.length === 0){
-        emptyEl.style.display = 'block';
-        emptyEl.textContent = 'Todavía no hay nadie registrado. ¡Sé el primero!';
-        listEl.innerHTML = '';
-        return;
-      }
-      emptyEl.style.display = 'none';
-      listEl.innerHTML = items.map(u =>
-        '<li><span class="dot"></span>' + escapeHtml(u) + '</li>'
-      ).join('');
-    }catch(e){
-      emptyEl.style.display = 'block';
-      emptyEl.textContent = 'No se pudo cargar la lista de miembros. Revisá que el servidor esté corriendo.';
+  function showGreeting(username){
+    const el = document.getElementById('user-greeting');
+    if(!el) return;
+    if(username){
+      el.textContent = 'Hola, ' + username;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
     }
   }
+
+  // Si ya se había registrado antes en este navegador, lo saludamos de nuevo.
+  showGreeting(localStorage.getItem(LOCAL_KEY));
 
   form.addEventListener('submit', async function(e){
     e.preventDefault();
@@ -1204,16 +1190,15 @@
       }
 
       showMsg('¡Cuenta creada! Bienvenido a davismo, ' + data.username + '.', 'ok');
+      localStorage.setItem(LOCAL_KEY, data.username);
+      showGreeting(data.username);
       form.reset();
-      loadMembers();
     }catch(e){
       showMsg('No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', 'err');
     }finally{
       submitBtn.disabled = false;
     }
   });
-
-  loadMembers();
 })();
 </script>
 
@@ -2986,6 +2971,8 @@
     key: '',
     keyInput: '',
     appeals: [],
+    members: [],
+    tab: 'apelaciones',
     loading: false,
     error: ''
   };
@@ -3047,7 +3034,9 @@
       sessionStorage.setItem(STORAGE_KEY, state.key);
       state.authed = true;
       state.error = '';
-      await fetchAppeals();
+      await Promise.all([fetchAppeals(true), fetchMembers(true)]);
+      state.loading = false;
+      render();
     }catch(e){
       state.error = 'No se pudo conectar con el servidor.';
       state.loading = false;
@@ -3055,9 +3044,8 @@
     }
   }
 
-  async function fetchAppeals(){
-    state.loading = true;
-    render();
+  async function fetchAppeals(silent){
+    if(!silent){ state.loading = true; render(); }
     try{
       const res = await fetch('/api/apelaciones', { headers: { 'x-admin-key': state.key } });
       const data = await res.json();
@@ -3069,8 +3057,24 @@
     }catch(e){
       state.error = e.message || 'No se pudo conectar con el servidor.';
     }finally{
-      state.loading = false;
-      render();
+      if(!silent){ state.loading = false; render(); }
+    }
+  }
+
+  async function fetchMembers(silent){
+    if(!silent){ state.loading = true; render(); }
+    try{
+      const res = await fetch('/api/miembros', { headers: { 'x-admin-key': state.key } });
+      const data = await res.json();
+      if(!res.ok || !data.ok){
+        throw new Error((data && data.error) || 'No se pudo cargar la lista de miembros.');
+      }
+      state.members = data.members || [];
+      state.error = '';
+    }catch(e){
+      state.error = e.message || 'No se pudo conectar con el servidor.';
+    }finally{
+      if(!silent){ state.loading = false; render(); }
     }
   }
 
@@ -3081,20 +3085,42 @@
     }catch(e){ return iso; }
   }
 
+  function renderTabs(){
+    return `
+      <div class="imp-lobby-tabs" style="margin-bottom:20px;">
+        <button type="button" data-admin-tab="apelaciones" class="${state.tab === 'apelaciones' ? 'active' : ''}">Apelaciones (${state.appeals.length})</button>
+        <button type="button" data-admin-tab="miembros" class="${state.tab === 'miembros' ? 'active' : ''}">Miembros (${state.members.length})</button>
+      </div>
+    `;
+  }
+
+  function attachTabHandlers(el){
+    el.querySelectorAll('[data-admin-tab]').forEach(btn => {
+      btn.addEventListener('click', () => { state.tab = btn.getAttribute('data-admin-tab'); render(); });
+    });
+  }
+
   function renderList(el){
-    if(state.loading && !state.appeals.length){
-      el.innerHTML = '<p class="imp-hint">Cargando...</p>';
+    if(state.loading){
+      el.innerHTML = renderTabs() + '<p class="imp-hint">Cargando...</p>';
+      attachTabHandlers(el);
       return;
     }
+    if(state.tab === 'miembros') return renderMembers(el);
+    renderAppeals(el);
+  }
+
+  function renderAppeals(el){
     if(!state.appeals.length){
-      el.innerHTML = `
+      el.innerHTML = renderTabs() + `
         <div class="admin-empty">No hay apelaciones todavía.</div>
         <div class="imp-actions"><button type="button" class="btn btn-outline" id="admin-logout-btn">Cerrar sesión</button></div>
       `;
+      attachTabHandlers(el);
       el.querySelector('#admin-logout-btn').addEventListener('click', logout);
       return;
     }
-    el.innerHTML = `
+    el.innerHTML = renderTabs() + `
       <div class="mgame-error">${esc(state.error)}</div>
       <div class="admin-list">
         ${state.appeals.map(a => `
@@ -3121,12 +3147,42 @@
       </div>
       <div class="imp-actions" style="margin-top:18px;"><button type="button" class="btn btn-outline" id="admin-logout-btn">Cerrar sesión</button></div>
     `;
+    attachTabHandlers(el);
     el.querySelectorAll('.status-select').forEach(sel => {
       sel.addEventListener('change', () => updateStatus(sel.getAttribute('data-id'), sel.value));
     });
     el.querySelectorAll('.del-btn').forEach(btn => {
       btn.addEventListener('click', () => deleteAppeal(btn.getAttribute('data-id')));
     });
+    el.querySelector('#admin-logout-btn').addEventListener('click', logout);
+  }
+
+  function renderMembers(el){
+    if(!state.members.length){
+      el.innerHTML = renderTabs() + `
+        <div class="admin-empty">Todavía no hay nadie registrado.</div>
+        <div class="imp-actions"><button type="button" class="btn btn-outline" id="admin-logout-btn">Cerrar sesión</button></div>
+      `;
+      attachTabHandlers(el);
+      el.querySelector('#admin-logout-btn').addEventListener('click', logout);
+      return;
+    }
+    el.innerHTML = renderTabs() + `
+      <div class="admin-list">
+        ${state.members.map(m => `
+          <div class="admin-card">
+            <div class="top-row">
+              <span class="user">${esc(m.username)}</span>
+              <span class="date">${esc(fmtDate(m.createdAt))}</span>
+            </div>
+            <div class="field-label">Correo</div>
+            <div class="field-value">${esc(m.email)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="imp-actions" style="margin-top:18px;"><button type="button" class="btn btn-outline" id="admin-logout-btn">Cerrar sesión</button></div>
+    `;
+    attachTabHandlers(el);
     el.querySelector('#admin-logout-btn').addEventListener('click', logout);
   }
 
@@ -3160,6 +3216,8 @@
     state.key = '';
     state.keyInput = '';
     state.appeals = [];
+    state.members = [];
+    state.tab = 'apelaciones';
     render();
   }
 
